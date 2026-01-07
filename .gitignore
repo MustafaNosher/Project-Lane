@@ -8,6 +8,7 @@ yarn-error.log*
 # macOS
 .DS_Store
 
-# Optional
-/dist
-/build
+# Optional frontend build folders
+client/node_modules/
+client/build/
+server/build/
