@@ -6,11 +6,15 @@ import { validateRequestBody } from "../utils/validateRequest.js";
 
 const registerUser = async (req, res) => {
   // Validate request body
-  const errorMsg = validateRequestBody(req.body, ["email", "name", "password"]);
+  const errorMsg = validateRequestBody(req.body, ["email", "name", "password", "confirmPassword"]);
   if (errorMsg) return errorResponse(res, 400, errorMsg);
 
   try {
-    const { email, name, password } = req.body;
+    const { email, name, password, confirmPassword } = req.body;
+
+    if (password !== confirmPassword) {
+      return errorResponse(res, 400, "Passwords do not match");
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {

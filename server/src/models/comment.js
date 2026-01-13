@@ -34,15 +34,6 @@ const commentSchema = mongoose.Schema(
         },
       },
     ],
-    // A file can also be attached withint a comment
-    attachments: [
-      {
-        fileName: { type: String },
-        fileUrl: { type: String },
-        fileType: { type: String },
-        fileSize: { type: Number },
-      },
-    ],
     isEdited: { type: Boolean, default: false },
   },
   { timestamps: true }

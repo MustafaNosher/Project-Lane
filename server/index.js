@@ -3,6 +3,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import morgan from "morgan";
+import path from "path";
 import routes from "./src/routes/index.js";
 
 dotenv.config();
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 app.use("/api", routes); 
 
 mongoose.connect(process.env.MONGO_URL)

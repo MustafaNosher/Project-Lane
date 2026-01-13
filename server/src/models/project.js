@@ -15,8 +15,8 @@ const projectSchema = new mongoose.Schema(
     }, // A project must belong to a workspace
     status: {
       type: String,
-      enum: ["To Do", "In Progress", "Need Info", "Completed", "Cancelled"],
-      default: "To Do",
+      enum: ["Planning", "In Progress", "Need Info", "Completed", "Cancelled"],
+      default: "Planning",
     },
     startDate: { type: Date },
     dueDate: { type: Date },

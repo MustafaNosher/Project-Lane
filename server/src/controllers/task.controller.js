@@ -42,11 +42,12 @@ const createTask = async (req , res)=> {
             createdBy: req.user._id,
         });
 
-        project.tasks.push(task._id);
+        const populatedTask = await taskModel.findById(task._id).populate("assignees", "name profilePicture");
 
+        project.tasks.push(task._id);
         await project.save();
 
-        return successResponse(res , 201 , "Task created successfully" , task);
+        return successResponse(res , 201 , "Task created successfully" , populatedTask);
     }
     catch(error){
 
@@ -60,7 +61,12 @@ const getTaskById = async (req , res)=> {
     try{
         const {taskId} = req.params;
 
-        const task = await taskModel.findById(taskId).populate("assignees", "name profilePicture");
+        const task = await taskModel.findById(taskId)
+        .populate("assignees", "name profilePicture")
+        .populate({
+            path: "comments",
+            populate: { path: "author", select: "name profilePicture" }
+        });
 
         if(!task){
             return errorResponse(res , 404 , "Task not found");
@@ -106,7 +112,12 @@ const updateTaskTitle = async (req , res)=> {
             return errorResponse(res , 403 , "You are not a member of this project");
         }   
 
-        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ title },{ new: true , runValidators: true });
+        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ title },{ new: true , runValidators: true })
+            .populate("assignees", "name profilePicture")
+            .populate({
+                path: "comments",
+                populate: { path: "author", select: "name profilePicture" }
+            });
 
         if(!updatedTask){
             return errorResponse(res , 404 , "Task not found");
@@ -161,7 +172,12 @@ const updateTaskDescription = async (req , res)=> {
             return errorResponse(res , 403 , "You are not a member of this project");
         }   
 
-        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ description },{ new: true , runValidators: true });
+        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ description },{ new: true , runValidators: true })
+            .populate("assignees", "name profilePicture")
+            .populate({
+                path: "comments",
+                populate: { path: "author", select: "name profilePicture" }
+            });
 
         if(!updatedTask){
             return errorResponse(res , 404 , "Task not found");
@@ -207,7 +223,12 @@ const updateTaskStatus = async (req, res)=>{
             return errorResponse(res , 403 , "You are not a member of this project");
         }   
 
-        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ status },{ new: true , runValidators: true });
+        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ status },{ new: true , runValidators: true })
+            .populate("assignees", "name profilePicture")
+            .populate({
+                path: "comments",
+                populate: { path: "author", select: "name profilePicture" }
+            });
 
         if(!updatedTask){
             return errorResponse(res , 404 , "Task not found");
@@ -299,7 +320,12 @@ const updateTaskPriority = async (req , res)=>{
             return errorResponse(res , 403 , "You are not a member of this project");
         }   
 
-        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ priority },{ new: true , runValidators: true });
+        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ priority },{ new: true , runValidators: true })
+            .populate("assignees", "name profilePicture")
+            .populate({
+                path: "comments",
+                populate: { path: "author", select: "name profilePicture" }
+            });
 
         if(!updatedTask){
             return errorResponse(res , 404 , "Task not found");
@@ -356,7 +382,11 @@ const addSubTask = async (req ,res)=>{
                 }
             },
             { new: true, runValidators: true }
-        );
+        ).populate("assignees", "name profilePicture")
+        .populate({
+            path: "comments",
+            populate: { path: "author", select: "name profilePicture" }
+        });
 
 
         return successResponse(res , 200 , "Subtask added successfully" , updatedTask);
@@ -417,7 +447,11 @@ const updateSubTask = async (req,res)=>{
                 new: true,
                 runValidators: true
             }
-        );
+        ).populate("assignees", "name profilePicture")
+        .populate({
+            path: "comments",
+            populate: { path: "author", select: "name profilePicture" }
+        });
         if (!updatedSubtask) {
 
             return errorResponse(res , 404 , "Subtask not found");
@@ -470,13 +504,17 @@ const addComment = async(req,res)=>{
             text
         });
 
-        await taskModel.findByIdAndUpdate(
+        const updatedTask = await taskModel.findByIdAndUpdate(
             taskId,
             { $push: { comments: addedComment._id } },
             { new: true, runValidators: true }
-        );
+        ).populate("assignees", "name profilePicture")
+        .populate({
+            path: "comments",
+            populate: { path: "author", select: "name profilePicture" }
+        });
 
-        return successResponse(res , 200 , "Comment added successfully" , addedComment);
+        return successResponse(res , 200 , "Comment added successfully" , updatedTask);
     }
     catch(error){
         console.error("Error in Adding Comment:", error);
@@ -524,6 +562,58 @@ const getMyTasks = async (req,res)=>{
     }
 }
 
+// Upload Attachment
+const uploadAttachment = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    if (!req.file) {
+      return errorResponse(res, 400, "No file uploaded");
+    }
+
+    const task = await taskModel.findById(taskId);
+    if (!task) {
+      return errorResponse(res, 404, "Task not found");
+    }
+
+    const project = await projectModel.findById(task.project);
+    if (!project) {
+      return errorResponse(res, 404, "Project not found");
+    }
+
+    const isMember = project.members.some(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+    if (!isMember) {
+      return errorResponse(res, 403, "You are not a member of this project");
+    }
+
+    const attachment = {
+      fileName: req.file.originalname,
+      fileUrl: `/uploads/attachments/${req.file.filename}`,
+      fileType: req.file.mimetype,
+      fileSize: req.file.size,
+      uploadedBy: req.user._id,
+    };
+
+    const updatedTask = await taskModel.findByIdAndUpdate(
+      taskId,
+      { $push: { attachments: attachment } },
+      { new: true, runValidators: true }
+    )
+      .populate("assignees", "name profilePicture")
+      .populate({
+        path: "comments",
+        populate: { path: "author", select: "name profilePicture" },
+      })
+      .populate("attachments.uploadedBy", "name profilePicture");
+
+    return successResponse(res, 200, "File uploaded successfully", updatedTask);
+  } catch (error) {
+    console.error("Error in Uploading Attachment:", error);
+    return errorResponse(res, 500, "Internal server error");
+  }
+};
+
 export{
     createTask,
     getTaskById,
@@ -536,5 +626,6 @@ export{
     updateSubTask,
     getCommentsofTask,
     addComment,
-    getMyTasks
+    getMyTasks,
+    uploadAttachment
 }

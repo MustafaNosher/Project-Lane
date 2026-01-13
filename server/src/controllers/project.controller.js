@@ -89,7 +89,7 @@ const getProjectTasks = async (req , res)=>{
     try{
         const {projectId} = req.params;
 
-        const project = await projectModel.findById(projectId).populate("members.user");
+        const project = await projectModel.findById(projectId);
 
         if(!project){
             return errorResponse(res , 404 , "Project not found");
@@ -114,4 +114,49 @@ const getProjectTasks = async (req , res)=>{
     }
 }
 
-export {createProject , getProjectDetails , getProjectTasks};
+const updateProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { title, description, status, startDate, dueDate, tags, progress } = req.body;
+
+    const project = await projectModel.findById(projectId);
+
+    if (!project) {
+      return errorResponse(res, 404, "Project not found");
+    }
+
+    const isMember = project.members.some(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (!isMember) {
+      return errorResponse(res, 403, "You are not a member of this project");
+    }
+
+    const updateData = {
+      title: title || project.title,
+      description: description !== undefined ? description : project.description,
+      status: status || project.status,
+      startDate: startDate || project.startDate,
+      dueDate: dueDate || project.dueDate,
+      progress: progress !== undefined ? progress : project.progress,
+    };
+
+    if (tags) {
+      updateData.tags = typeof tags === "string" ? tags.split(",").map(tag => tag.trim()) : tags;
+    }
+
+    const updatedProject = await projectModel.findByIdAndUpdate(
+      projectId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    return successResponse(res, 200, "Project updated successfully", updatedProject);
+  } catch (error) {
+    console.error("Error in Updating Project:", error);
+    return errorResponse(res, 500, "Internal server error");
+  }
+};
+
+export { createProject, getProjectDetails, getProjectTasks, updateProject };

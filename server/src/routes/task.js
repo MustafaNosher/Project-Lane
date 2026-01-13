@@ -13,8 +13,10 @@ import {
     addSubTask,
     updateSubTask,
     addComment,
-    getMyTasks
+    getMyTasks,
+    uploadAttachment
 } from "../controllers/task.controller.js";
+import { upload } from "../libs/multer.js";
 
 const router = express.Router();
 
@@ -29,6 +31,7 @@ router.patch("/:taskId/priority" , authMiddleware , parseFormData, updateTaskPri
 router.post("/:taskId/subtasks" , authMiddleware , parseFormData, addSubTask);
 router.post("/:taskId/comments" , authMiddleware , parseFormData, addComment);
 router.patch("/:taskId/subtasks/:subtaskId" , authMiddleware , parseFormData, updateSubTask);
+router.post("/:taskId/attachments", authMiddleware, upload.single("attachment"), uploadAttachment);
 
 
 export default router;
