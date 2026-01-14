@@ -2,6 +2,7 @@ import projectModel from "../models/project.js";
 import workspaceModel from "../models/workspace.js"
 import taskModel from "../models/task.js";
 import commentModel from "../models/comment.js";
+import { notifyTaskUpdate } from "../libs/socket.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { validateRequestBody } from "../utils/validateRequest.js";
 
@@ -123,6 +124,7 @@ const updateTaskTitle = async (req , res)=> {
             return errorResponse(res , 404 , "Task not found");
         }
 
+        notifyTaskUpdate(taskId, updatedTask);
         return successResponse(res , 200 , "Task title updated successfully" , updatedTask);
     }
     catch(error){
@@ -183,6 +185,7 @@ const updateTaskDescription = async (req , res)=> {
             return errorResponse(res , 404 , "Task not found");
         }
 
+        notifyTaskUpdate(taskId, updatedTask);
         return successResponse(res , 200 , "Task description updated successfully" , updatedTask);
     }
     catch(error){
@@ -234,6 +237,7 @@ const updateTaskStatus = async (req, res)=>{
             return errorResponse(res , 404 , "Task not found");
         }
 
+        notifyTaskUpdate(taskId, updatedTask);
         return successResponse(res , 200 , "Task status updated successfully" , updatedTask);
     }
     catch(error){
@@ -274,12 +278,18 @@ const updateTaskAssignees = async (req , res)=>{
             return errorResponse(res , 403 , "You are not a member of this project");
         }   
 
-        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ assignees },{ new: true , runValidators: true });
+        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ assignees },{ new: true , runValidators: true })
+            .populate("assignees", "name profilePicture")
+            .populate({
+                path: "comments",
+                populate: { path: "author", select: "name profilePicture" }
+            });
 
         if(!updatedTask){
             return errorResponse(res , 404 , "Task not found");
         }
 
+        notifyTaskUpdate(taskId, updatedTask);
         return successResponse(res , 200 , "Task assignees updated successfully" , updatedTask);
     }
     catch(error){
@@ -331,6 +341,7 @@ const updateTaskPriority = async (req , res)=>{
             return errorResponse(res , 404 , "Task not found");
         }
 
+        notifyTaskUpdate(taskId, updatedTask);
         return successResponse(res , 200 , "Task priority updated successfully" , updatedTask);
     }
     catch(error){
@@ -389,6 +400,7 @@ const addSubTask = async (req ,res)=>{
         });
 
 
+        notifyTaskUpdate(taskId, updatedTask);
         return successResponse(res , 200 , "Subtask added successfully" , updatedTask);
     }
     catch(error){
@@ -457,6 +469,7 @@ const updateSubTask = async (req,res)=>{
             return errorResponse(res , 404 , "Subtask not found");
         }
 
+        notifyTaskUpdate(taskId, updatedSubtask);
         return successResponse(res , 200 , "Subtask updated successfully" , updatedSubtask);
     }
     catch(error){
@@ -514,6 +527,7 @@ const addComment = async(req,res)=>{
             populate: { path: "author", select: "name profilePicture" }
         });
 
+        notifyTaskUpdate(taskId, updatedTask);
         return successResponse(res , 200 , "Comment added successfully" , updatedTask);
     }
     catch(error){

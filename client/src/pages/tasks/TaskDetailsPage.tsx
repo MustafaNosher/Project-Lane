@@ -7,8 +7,12 @@ import {
   updateTaskPriorityThunk, 
   addSubTaskThunk, 
   updateSubTaskThunk, 
-  addCommentThunk 
+  addCommentThunk,
+  updateTaskInState 
 } from "@/lib/slices/taskSlice";
+import { fetchProjectDetails } from "@/lib/slices/projectSlice";
+import { TaskAssigneeSelector } from "@/components/tasks/TaskAssigneeSelector";
+import { socket, joinTaskRoom, leaveTaskRoom } from "@/lib/socket";
 import { 
   Loader2, 
   CheckCircle2, 
@@ -19,7 +23,6 @@ import {
   Calendar,
   Send,
   ChevronLeft,
-  User as UserIcon,
   Layout,
   FileText,
   Download,
@@ -46,6 +49,9 @@ export default function TaskDetailsPage() {
   const task = useAppSelector((state) => 
     state.tasks.tasks.find((t) => t._id === taskId)
   );
+  const project = useAppSelector((state) =>
+    state.projects.projects.find((p) => p._id === task?.project)
+  );
   const { loading } = useAppSelector((state) => state.tasks);
 
   const [description, setDescription] = useState("");
@@ -60,8 +66,29 @@ export default function TaskDetailsPage() {
   useEffect(() => {
     if (taskId) {
       dispatch(fetchTaskByIdThunk(taskId));
+      
+      // Real-time updates via Socket.io
+      joinTaskRoom(taskId);
+
+      const handleTaskUpdated = (updatedTask: any) => {
+        console.log("Real-time task update received:", updatedTask);
+        dispatch(updateTaskInState(updatedTask));
+      };
+
+      socket.on("task_updated", handleTaskUpdated);
+
+      return () => {
+        leaveTaskRoom(taskId);
+        socket.off("task_updated", handleTaskUpdated);
+      };
     }
   }, [dispatch, taskId]);
+
+  useEffect(() => {
+    if (task?.project && !project) {
+      dispatch(fetchProjectDetails(task.project));
+    }
+  }, [dispatch, task?.project, project]);
 
   useEffect(() => {
     if (task) {
@@ -386,20 +413,13 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               <div className="space-y-3">
                 <Label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Assigned To</Label>
                 <div className="flex flex-wrap gap-2">
-                  {task.assignees?.map((user) => (
-                    <div key={user._id} className="flex items-center gap-2 bg-slate-900/50 pr-3 rounded-full border border-white/5">
-                      <Avatar className="w-7 h-7">
-                        <AvatarImage src={user.profilePicture} />
-                        <AvatarFallback className="bg-indigo-500/20 text-indigo-400 text-[10px] uppercase">
-                          {user.name.slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-xs font-medium">{user.name}</span>
-                    </div>
-                  ))}
+                  <TaskAssigneeSelector 
+                    task={task} 
+                    projectMembers={project?.members || []} 
+                  />
                   {(!task.assignees || task.assignees.length === 0) && (
                     <div className="text-xs text-slate-500 italic flex items-center gap-2">
-                      <UserIcon className="w-4 h-4" /> Unassigned
+                       No one assigned
                     </div>
                   )}
                 </div>

@@ -77,6 +77,7 @@ const getWorkspaceProjects = async (req, res) => {
       members: { $elemMatch: { user: req.user._id } },
     })
       .populate("tasks", "status")
+      .populate("members.user", "name profilePicture")
       .sort({ createdAt: -1 });
 
     return successResponse(res, 200, "Workspace projects fetched successfully", { projects, workspace });

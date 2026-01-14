@@ -23,7 +23,7 @@ const createProject = async (req , res)=>{
         }
 
         const isMember = workspace.members.some(
-            (member)=> member.user.toString() === req.user._id.toString()
+            (member)=> (member.user?._id || member.user).toString() === req.user._id.toString()
         );
 
         if(!isMember){
@@ -52,7 +52,10 @@ const createProject = async (req , res)=>{
             { $push: { projects: project._id } },
             { new: true, runValidators: true }
         );
-        return successResponse(res , 201 , "Project created successfully" , project);
+
+        const populatedProject = await projectModel.findById(project._id).populate("members.user", "name profilePicture");
+
+        return successResponse(res , 201 , "Project created successfully" , populatedProject);
 
     }catch(error){
         console.log(error);
@@ -64,13 +67,13 @@ const getProjectDetails = async (req , res)=>{
     try{
         const {projectId} = req.params;
 
-        const project = await projectModel.findById(projectId);
+        const project = await projectModel.findById(projectId).populate("members.user", "name profilePicture");
 
         if(!project){
             return errorResponse(res , 404 , "Project not found");
         }
         const isMember = project.members.some(
-            (member)=> member.user.toString() === req.user._id.toString()
+            (member)=> (member.user?._id || member.user).toString() === req.user._id.toString()
         );
         if(!isMember){
             return errorResponse(res , 403 , "You are not a member of this project");
@@ -96,7 +99,7 @@ const getProjectTasks = async (req , res)=>{
         }
 
         const isMember = project.members.some(
-            (member)=> member.user.toString() === req.user._id.toString()
+            (member)=> (member.user?._id || member.user).toString() === req.user._id.toString()
         );
         if(!isMember){
             return errorResponse(res , 403 , "You are not a member of this project");
@@ -126,7 +129,7 @@ const updateProject = async (req, res) => {
     }
 
     const isMember = project.members.some(
-      (member) => member.user.toString() === req.user._id.toString()
+      (member) => (member.user?._id || member.user).toString() === req.user._id.toString()
     );
 
     if (!isMember) {
@@ -150,7 +153,7 @@ const updateProject = async (req, res) => {
       projectId,
       updateData,
       { new: true, runValidators: true }
-    );
+    ).populate("members.user", "name profilePicture");
 
     return successResponse(res, 200, "Project updated successfully", updatedProject);
   } catch (error) {

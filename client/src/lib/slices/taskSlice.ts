@@ -211,6 +211,32 @@ export const updateSubTaskThunk = createAsyncThunk(
   }
 );
 
+// Update Task Assignees
+export const updateTaskAssigneesThunk = createAsyncThunk(
+  "tasks/updateAssignees",
+  async (
+    { taskId, assignees }: { taskId: string; assignees: string[] },
+    { rejectWithValue }
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.patch(
+        `${API_BASE_URL}/task/${taskId}/assignees`,
+        { assignees },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data.data;
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        return rejectWithValue(
+          error.response?.data?.message || "Failed to update assignees"
+        );
+      }
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
 // Add comment
 export const addCommentThunk = createAsyncThunk(
   "tasks/addComment",
@@ -278,6 +304,14 @@ const taskSlice = createSlice({
     clearTasks: (state) => {
       state.tasks = [];
     },
+    updateTaskInState: (state, action: PayloadAction<Task>) => {
+      const index = state.tasks.findIndex((t) => t._id === action.payload._id);
+      if (index !== -1) {
+        state.tasks[index] = action.payload;
+      } else {
+        state.tasks.unshift(action.payload);
+      }
+    },
   },
   extraReducers: (builder) => {
     // fetchProjectTasks
@@ -321,6 +355,7 @@ const taskSlice = createSlice({
           updateTaskStatusThunk.fulfilled.type,
           updateTaskDescriptionThunk.fulfilled.type,
           updateTaskPriorityThunk.fulfilled.type,
+          updateTaskAssigneesThunk.fulfilled.type,
           addSubTaskThunk.fulfilled.type,
           updateSubTaskThunk.fulfilled.type,
           addCommentThunk.fulfilled.type,
@@ -340,5 +375,5 @@ const taskSlice = createSlice({
   },
 });
 
-export const { clearTasks } = taskSlice.actions;
+export const { clearTasks, updateTaskInState } = taskSlice.actions;
 export default taskSlice.reducer;

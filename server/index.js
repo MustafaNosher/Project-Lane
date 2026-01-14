@@ -4,11 +4,17 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import path from "path";
+import http from "http";
+import { initSocket } from "./src/libs/socket.js";
 import routes from "./src/routes/index.js";
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.io
+initSocket(server);
 
 const PORT = process.env.PORT || 3000;
 
@@ -37,4 +43,4 @@ app.use((err, req, res, next) => {
 });
 
 
-app.listen(PORT, ()=> console.log(`Server is running on port ${PORT}`))
+server.listen(PORT, ()=> console.log(`Server is running on port ${PORT}`))

@@ -2,11 +2,26 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { fetchProjectDetails } from "@/lib/slices/projectSlice";
-import { fetchProjectTasks } from "@/lib/slices/taskSlice";
+import { fetchProjectTasks, updateTaskStatusThunk } from "@/lib/slices/taskSlice";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { ProjectSettingsDialog } from "@/components/projects/ProjectSettingsDialog";
 import { Button } from "@/components/ui/button";
+import { 
+  DndContext, 
+  type DragEndEvent, 
+  type DragStartEvent,
+  PointerSensor, 
+  useSensor, 
+  useSensors, 
+  closestCorners,
+  DragOverlay,
+  useDroppable
+} from "@dnd-kit/core";
+import { 
+  SortableContext, 
+  verticalListSortingStrategy 
+} from "@dnd-kit/sortable";
 import { 
   Plus, 
   Settings, 
@@ -26,6 +41,61 @@ const STATUS_COLUMNS = [
   { id: "Done", label: "Done", icon: CheckCircle2, color: "text-emerald-400" },
 ];
 
+// --- Sub-components ---
+
+function KanbanColumn({ column, tasks, projectMembers }: { column: any, tasks: any[], projectMembers: any[] }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+  });
+
+  const Icon = column.icon;
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={`flex flex-col gap-4 p-3 rounded-xl transition-all min-h-[400px] ${
+        isOver ? "bg-indigo-500/5 ring-2 ring-indigo-500/20 ring-dashed scale-[1.01]" : "bg-transparent"
+      }`}
+    >
+      <div className="flex items-center justify-between px-2 mb-2">
+        <div className="flex items-center gap-2">
+          <Icon className={`w-4 h-4 ${column.color}`} />
+          <h3 className="font-semibold text-slate-200 text-sm tracking-wide uppercase">
+            {column.label}
+          </h3>
+          <span className="bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full border border-white/5 font-bold">
+            {tasks.length}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 p-2 rounded-xl bg-slate-900/30 border border-white/5 h-full">
+        <SortableContext 
+          id={column.id}
+          items={tasks.map(t => t._id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {tasks.map((task) => (
+            <TaskCard 
+              key={task._id} 
+              task={task} 
+              projectMembers={projectMembers}
+            />
+          ))}
+        </SortableContext>
+        
+        {tasks.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-600 border border-dashed border-white/5 rounded-lg h-full">
+            <p className="text-xs">No tasks</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Main Component ---
+
 export default function ProjectDetails() {
   const { projectId } = useParams<{ projectId: string }>();
   const dispatch = useAppDispatch();
@@ -35,6 +105,49 @@ export default function ProjectDetails() {
   );
   const { tasks, loading: tasksLoading, error: tasksError } = useAppSelector((state) => state.tasks);
   const { loading: projectLoading, error: projectError } = useAppSelector((state) => state.projects);
+
+  const [activeTask, setActiveTask] = useState<any>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const task = tasks.find(t => t._id === event.active.id);
+    setActiveTask(task);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveTask(null);
+    const { active, over } = event;
+
+    if (!over) return;
+
+    const taskId = active.id as string;
+    const overId = over.id as string;
+
+    const draggedTask = tasks.find(t => t._id === taskId);
+    if (!draggedTask) return;
+
+    // Determine the target status
+    let targetStatus = overId;
+    
+    // If dropped over another task, get its status
+    const overTask = tasks.find(t => t._id === overId);
+    if (overTask) {
+      targetStatus = overTask.status;
+    }
+
+    // Only update if the status actually changed
+    const isValidStatus = STATUS_COLUMNS.some(col => col.id === targetStatus);
+    if (draggedTask.status !== targetStatus && isValidStatus) {
+      dispatch(updateTaskStatusThunk({ taskId, status: targetStatus }));
+    }
+  };
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -46,7 +159,6 @@ export default function ProjectDetails() {
     }
   }, [dispatch, projectId]);
 
-  // Handle errors
   if (projectError || tasksError) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
@@ -141,43 +253,34 @@ export default function ProjectDetails() {
       </div>
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[500px]">
-        {STATUS_COLUMNS.map((column) => {
-          const columnTasks = tasks.filter((t) => t.status === column.id);
-          const Icon = column.icon;
+      <DndContext 
+        sensors={sensors} 
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[500px]">
+          {STATUS_COLUMNS.map((column) => (
+            <KanbanColumn 
+              key={column.id}
+              column={column}
+              tasks={tasks.filter((t) => t.status === column.id)}
+              projectMembers={project.members}
+            />
+          ))}
+        </div>
 
-          return (
-            <div key={column.id} className="flex flex-col gap-4">
-              <div className="flex items-center justify-between px-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <Icon className={`w-4 h-4 ${column.color}`} />
-                  <h3 className="font-semibold text-slate-200 text-sm tracking-wide uppercase">
-                    {column.label}
-                  </h3>
-                  <span className="bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full border border-white/5 font-bold">
-                    {columnTasks.length}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 p-2 rounded-xl bg-slate-900/30 border border-white/5 h-full">
-                {columnTasks.map((task) => (
-                  <TaskCard 
-                    key={task._id} 
-                    task={task} 
-                  />
-                ))}
-                
-                {columnTasks.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-600 border border-dashed border-white/5 rounded-lg h-full">
-                    <p className="text-xs">No tasks</p>
-                  </div>
-                )}
-              </div>
+        <DragOverlay>
+          {activeTask ? (
+            <div className="opacity-80 scale-105 pointer-events-none">
+              <TaskCard 
+                task={activeTask} 
+                projectMembers={project.members}
+              />
             </div>
-          );
-        })}
-      </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Dialogs */}
       {project && (
