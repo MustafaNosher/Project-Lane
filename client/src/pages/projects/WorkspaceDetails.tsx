@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { fetchProjectsByWorkspace } from "@/lib/slices/projectSlice";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
+import { AddMemberDialog } from "@/components/workspaces/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, Layout, Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -11,20 +12,24 @@ import { Input } from "@/components/ui/input";
 export default function WorkspaceDetails() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const dispatch = useAppDispatch();
-  const { projects, currentWorkspace, loading } = useAppSelector(
+  const { projects, loading: projectsLoading, lastFetchedWorkspaceId } = useAppSelector(
     (state) => state.projects
   );
+  const { currentWorkspace, isLoading: workspaceLoading } = useAppSelector((state) => state.workspace);
+  const { user: currentUser } = useAppSelector((state) => state.auth);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
 
+  const isOwner = currentUser?._id === currentWorkspace?.owner;
+
   useEffect(() => {
-    if (workspaceId) {
+     if (workspaceId) {
       dispatch(fetchProjectsByWorkspace(workspaceId));
     }
   }, [dispatch, workspaceId]);
-
+  
   const filteredProjects = projects.filter((project) => {
     const matchesSearch = project.title
       .toLowerCase()
@@ -34,7 +39,7 @@ export default function WorkspaceDetails() {
     return matchesSearch && matchesStatus;
   });
 
-  if (loading && !currentWorkspace) {
+  if (workspaceLoading && !currentWorkspace) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
@@ -42,7 +47,7 @@ export default function WorkspaceDetails() {
     );
   }
 
-  if (!currentWorkspace) {
+  if (!currentWorkspace && !workspaceLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
         <p>Workspace not found.</p>
@@ -52,6 +57,11 @@ export default function WorkspaceDetails() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
+      {projectsLoading && !projects.length && (
+        <div className="fixed inset-0 bg-slate-950/20 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+        </div>
+      )}
       {/* Header */}
       <div className="mb-8 p-8 rounded-2xl bg-linear-to-r from-indigo-900/50 to-purple-900/50 border border-white/10 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -62,12 +72,13 @@ export default function WorkspaceDetails() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">
-                {currentWorkspace.name}
+                {currentWorkspace?.name}
               </h1>
               <p className="text-indigo-200 max-w-2xl">
-                {currentWorkspace.description}
+                {currentWorkspace?.description}
               </p>
             </div>
+            <div className="flex flex-col gap-8">
             <Button
               onClick={() => setIsCreateDialogOpen(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20"
@@ -75,12 +86,17 @@ export default function WorkspaceDetails() {
               <Plus className="w-4 h-4 mr-2" />
               Create Project
             </Button>
+
+            {isOwner && currentWorkspace && (
+              <AddMemberDialog workspace={currentWorkspace} />
+            )}
+            </div>
           </div>
 
           <div className="flex items-center gap-6 text-sm text-indigo-300/80">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              <span>{currentWorkspace.members.length} Members</span>
+              <span>{currentWorkspace?.members.length} Members</span>
             </div>
             <div className="flex items-center gap-2">
               <Layout className="w-4 h-4" />

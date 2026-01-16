@@ -1,9 +1,17 @@
 import Workspace from "../models/workspace.js";
 import Project from "../models/project.js";
+import User from "../models/user.js";
+import Task from "../models/task.js";
 import { successResponse, errorResponse } from "../utils/response.js";
+import { validateRequestBody } from "../utils/validateRequest.js";
+import Comment from "../models/comment.js";
 
 const createWorkspace = async (req, res) => {
   try {
+     const errorMsg = validateRequestBody(req.body, ["name", "description", "color"]);
+
+     if (errorMsg) return errorResponse(res, 400, errorMsg);
+
     const { name, description, color } = req.body;
 
     const workspace = await Workspace.create({
@@ -19,7 +27,6 @@ const createWorkspace = async (req, res) => {
         },
       ],
     });
-
     return successResponse(res, 201, "Workspace created successfully", workspace);
   } catch (error) {
     console.log(error);
@@ -80,6 +87,15 @@ const getWorkspaceProjects = async (req, res) => {
       .populate("members.user", "name profilePicture")
       .sort({ createdAt: -1 });
 
+    // Self-healing: Ensure workspace.projects only contains existing project IDs
+    const projectIds = projects.map(p => p._id.toString());
+    const needsCleanup = workspace.projects.some(id => !projectIds.includes(id.toString()));
+    
+    if (needsCleanup) {
+      workspace.projects = workspace.projects.filter(id => projectIds.includes(id.toString()));
+      await workspace.save();
+    }
+
     return successResponse(res, 200, "Workspace projects fetched successfully", { projects, workspace });
   } catch (error) {
     console.log(error);
@@ -87,215 +103,102 @@ const getWorkspaceProjects = async (req, res) => {
   }
 };
 
-// const getWorkspaceStats = async (req, res) => {
-//   try {
-//     const { workspaceId } = req.params;
+const addWorkspaceMember = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { userId, role } = req.body;
 
-//     const workspace = await Workspace.findById(workspaceId);
+    const workspace = await Workspace.findById(workspaceId);
 
-//     if (!workspace) {
-//         return errorResponse(res, 404, "Workspace not found");
-//     }
+    if (!workspace) {
+      return errorResponse(res, 404, "Workspace not found");
+    }
 
-//     const isMember = workspace.members.map(
-//       (member) => member.user.toString() === req.user._id.toString()
-//     );
+    // Check if the current user is the owner
+    if (workspace.owner.toString() !== req.user._id.toString()) {
+      return errorResponse(res, 403, "Only the workspace owner can add members");
+    }
 
-//     if (!isMember) {
-//         return errorResponse(res, 403, "You are not a member of this workspace");
-//     }
+    // Check if the user to be added exists
+    const userToAdd = await User.findById(userId);
+    if (!userToAdd) {
+      return errorResponse(res, 404, "User not found");
+    }
 
-//     const [totalProjects, projects] = await Promise.all([
-//       Project.countDocuments({ workspace: workspaceId }),
-//       Project.find({ workspace: workspaceId })
-//         .populate(
-//           "tasks",
-//           "title status dueDate project updatedAt isArchived priority"
-//         )
-//         .sort({ createdAt: -1 }),
-//     ]);
+    // Check if the user is already a member
+    const isAlreadyMember = workspace.members.some(
+      (member) => member.user.toString() === userId.toString()
+    );
 
-//     const totalTasks = projects.reduce((acc, project) => {
-//       return acc + project.tasks.length;
-//     }, 0);
+    if (isAlreadyMember) {
+      return errorResponse(res, 400, "User is already a member of this workspace");
+    }
 
-//     const totalProjectInProgress = projects.filter(
-//       (project) => project.status === "In Progress"
-//     ).length;
+    // Add the new member
+    workspace.members.push({
+      user: userId,
+      role: role || "member",
+      joinedAt: new Date(),
+    });
 
-//     const totalTaskCompleted = projects.reduce((acc, project) => {
-//       return (
-//         acc + project.tasks.filter((task) => task.status === "Done").length
-//       );
-//     }, 0);
+    await workspace.save();
 
-//     const totalTaskToDo = projects.reduce((acc, project) => {
-//       return (
-//         acc + project.tasks.filter((task) => task.status === "To Do").length
-//       );
-//     }, 0);
+    const populatedWorkspace = await Workspace.findById(workspaceId).populate("members.user", "name email profilePicture");
 
-//     const totalTaskInProgress = projects.reduce((acc, project) => {
-//       return (
-//         acc +
-//         project.tasks.filter((task) => task.status === "In Progress").length
-//       );
-//     }, 0);
+    return successResponse(res, 200, "Member added successfully", populatedWorkspace);
+  } catch (error) {
+    console.log(error);
+    return errorResponse(res, 500, "Internal server error");
+  }
+};
 
-//     const tasks = projects.flatMap((project) => project.tasks);
 
-//     // get upcoming task in next 7 days
+const deleteWorkspace = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
 
-//     const upcomingTasks = tasks.filter((task) => {
-//       const taskDate = new Date(task.dueDate);
-//       const today = new Date();
-//       return (
-//         taskDate > today &&
-//         taskDate <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-//       );
-//     });
+    const workspace = await Workspace.findById(workspaceId);
 
-//     const taskTrendsData = [
-//       { name: "Sun", completed: 0, inProgress: 0, toDo: 0 },
-//       { name: "Mon", completed: 0, inProgress: 0, toDo: 0 },
-//       { name: "Tue", completed: 0, inProgress: 0, toDo: 0 },
-//       { name: "Wed", completed: 0, inProgress: 0, toDo: 0 },
-//       { name: "Thu", completed: 0, inProgress: 0, toDo: 0 },
-//       { name: "Fri", completed: 0, inProgress: 0, toDo: 0 },
-//       { name: "Sat", completed: 0, inProgress: 0, toDo: 0 },
-//     ];
+    if (!workspace) {
+      return errorResponse(res, 404, "Workspace not found");
+    }
 
-//     // get last 7 days tasks date
-//     const last7Days = Array.from({ length: 7 }, (_, i) => {
-//       const date = new Date();
-//       date.setDate(date.getDate() - i);
-//       return date;
-//     }).reverse();
+    if (workspace.owner.toString() !== req.user._id.toString()) {
+      return errorResponse(res, 403, "Only the workspace owner can delete the workspace");
+    }
 
-//     // populate
+    const projectIds = await Project.find({ workspace: workspaceId }).distinct("_id");
 
-//     for (const project of projects) {
-//       for (const task in project.tasks) {
-//         const taskDate = new Date(task.updatedAt);
+    if (projectIds.length > 0) {
+      // Find all tasks to get their IDs for comment deletion
+      const tasks = await Task.find({ project: { $in: projectIds } }).select("_id");
+      const taskIds = tasks.map(task => task._id);
 
-//         const dayInDate = last7Days.findIndex(
-//           (date) =>
-//             date.getDate() === taskDate.getDate() &&
-//             date.getMonth() === taskDate.getMonth() &&
-//             date.getFullYear() === taskDate.getFullYear()
-//         );
+      if (taskIds.length > 0) {
+        await Comment.deleteMany({ task: { $in: taskIds } });
+      }
 
-//         if (dayInDate !== -1) {
-//           const dayName = last7Days[dayInDate].toLocaleDateString("en-US", {
-//             weekday: "short",
-//           });
+      await Task.deleteMany({ project: { $in: projectIds } });
+    }
 
-//           const dayData = taskTrendsData.find((day) => day.name === dayName);
+    // Delete all projects in this workspace
+    await Project.deleteMany({ workspace: workspaceId });
 
-//           if (dayData) {
-//             switch (task.status) {
-//               case "Done":
-//                 dayData.completed++;
-//                 break;
-//               case "In Progress":
-//                 dayData.inProgress++;
-//                 break;
-//               case "To Do":
-//                 dayData.toDo++;
-//                 break;
-//             }
-//           }
-//         }
-//       }
-//     }
+    // Delete the workspace itself
+    await Workspace.findByIdAndDelete(workspaceId);
 
-//     // get project status distribution
-//     const projectStatusData = [
-//       { name: "Completed", value: 0, color: "#10b981" },
-//       { name: "In Progress", value: 0, color: "#3b82f6" },
-//       { name: "Planning", value: 0, color: "#f59e0b" },
-//     ];
-
-//     for (const project of projects) {
-//       switch (project.status) {
-//         case "Completed":
-//           projectStatusData[0].value++;
-//           break;
-//         case "In Progress":
-//           projectStatusData[1].value++;
-//           break;
-//         case "Planning":
-//           projectStatusData[2].value++;
-//           break;
-//       }
-//     }
-
-//     // Task priority distribution
-//     const taskPriorityData = [
-//       { name: "High", value: 0, color: "#ef4444" },
-//       { name: "Medium", value: 0, color: "#f59e0b" },
-//       { name: "Low", value: 0, color: "#6b7280" },
-//     ];
-
-//     for (const task of tasks) {
-//       switch (task.priority) {
-//         case "High":
-//           taskPriorityData[0].value++;
-//           break;
-//         case "Medium":
-//           taskPriorityData[1].value++;
-//           break;
-//         case "Low":
-//           taskPriorityData[2].value++;
-//           break;
-//       }
-//     }
-
-//     const workspaceProductivityData = [];
-
-//     for (const project of projects) {
-//       const projectTask = tasks.filter(
-//         (task) => task.project.toString() === project._id.toString()
-//       );
-
-//       const completedTask = projectTask.filter(
-//         (task) => task.status === "Done" && task.isArchived === false
-//       );
-
-//       workspaceProductivityData.push({
-//         name: project.title,
-//         completed: completedTask.length,
-//         total: projectTask.length,
-//       });
-//     }
-
-//     const stats = {
-//       totalProjects,
-//       totalTasks,
-//       totalProjectInProgress,
-//       totalTaskCompleted,
-//       totalTaskToDo,
-//       totalTaskInProgress,
-//     };
-
-//     return successResponse(res, 200, "Workspace stats fetched successfully", {
-//       stats,
-//       taskTrendsData,
-//       projectStatusData,
-//       taskPriorityData,
-//       workspaceProductivityData,
-//       upcomingTasks,
-//       recentProjects: projects.slice(0, 5),
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     return errorResponse(res, 500, "Internal server error");
-//   }
-// };
+    return successResponse(res, 200, "Workspace and all associated projects and tasks deleted successfully");
+  } catch (error) {
+    console.log(error);
+    return errorResponse(res, 500, "Internal server error");
+  }
+};
 
 export {
   createWorkspace,
   getWorkspaces,
   getWorkspaceDetails,
   getWorkspaceProjects,
+  addWorkspaceMember,
+  deleteWorkspace,
 };

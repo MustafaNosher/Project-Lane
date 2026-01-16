@@ -94,64 +94,10 @@ const updateTaskTitle = async (req , res)=> {
 
         const {title} = req.body;
 
-        const task = await taskModel.findById(taskId);
-
-        if(!task){
-            return errorResponse(res , 404 , "Task not found");
-        }
-
-        const project = await projectModel.findById(task.project);
-
-        if(!project){
-            return errorResponse(res , 404 , "Project not found");
-        }
-
-        const isMember = project.members.some(
-            (member)=> member.user.toString() === req.user._id.toString()
-        );
-        if(!isMember){
-            return errorResponse(res , 403 , "You are not a member of this project");
-        }   
-
-        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ title },{ new: true , runValidators: true })
-            .populate("assignees", "name profilePicture")
-            .populate({
-                path: "comments",
-                populate: { path: "author", select: "name profilePicture" }
-            });
-
-        if(!updatedTask){
-            return errorResponse(res , 404 , "Task not found");
-        }
-
-        notifyTaskUpdate(taskId, updatedTask);
-        return successResponse(res , 200 , "Task title updated successfully" , updatedTask);
-    }
-    catch(error){
-        console.error("Error in Updating Task Title:", error);
-        return errorResponse(res , 500 , "Internal server error");
-    }
-}
-
-//Update a Task Description
-
-const updateTaskDescription = async (req , res)=> {
-
-    try{
-        const errorMsg = validateRequestBody(req.body, ["description"]);
-
-        if(errorMsg){
-
-            return errorResponse(res , 400 , errorMsg);
-        }
-        const {taskId} = req.params;
-
-        const {description} = req.body;
-        
-        if (typeof description !== "string" || description.length > 30) {
+        if (typeof title !== "string" || title.length > 30) {
             return errorResponse(
                 res,400,
-                "Description must be between 0 and 30 characters"
+              "Title length must be upto 30 characters"
             );
         }
 
@@ -174,7 +120,61 @@ const updateTaskDescription = async (req , res)=> {
             return errorResponse(res , 403 , "You are not a member of this project");
         }   
 
-        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ description },{ new: true , runValidators: true })
+        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ title:title.trim() },{ new: true , runValidators: true })
+            .populate("assignees", "name profilePicture")
+            .populate({
+                path: "comments",
+                populate: { path: "author", select: "name profilePicture" }
+            });
+
+        if(!updatedTask){
+            return errorResponse(res , 404 , "Task not found");
+        }
+
+        notifyTaskUpdate(taskId, updatedTask);
+        return successResponse(res , 200 , "Task title updated successfully" , updatedTask);
+    }
+    catch(error){
+        console.error("Error in Updating Task Title:", error);
+        return errorResponse(res , 500 , "Internal server error");
+    }
+}
+
+//Update a Task Description
+const updateTaskDescription = async (req , res)=> {
+
+    try{
+        const {taskId} = req.params;
+
+        const {description} = req.body;
+
+        if (typeof description !== "string" || description.length > 100) {
+            return errorResponse(
+                res,400,
+              "Description cannot exceed 100 characters"
+            );
+        }
+        
+        const task = await taskModel.findById(taskId);
+
+        if(!task){
+            return errorResponse(res , 404 , "Task not found");
+        }
+
+        const project = await projectModel.findById(task.project);
+
+        if(!project){
+            return errorResponse(res , 404 , "Project not found");
+        }
+
+        const isMember = project.members.some(
+            (member)=> member.user.toString() === req.user._id.toString()
+        );
+        if(!isMember){
+            return errorResponse(res , 403 , "You are not a member of this project");
+        }   
+
+        const updatedTask = await taskModel.findByIdAndUpdate(taskId,{ description: description.trim() },{ new: true , runValidators: true })
             .populate("assignees", "name profilePicture")
             .populate({
                 path: "comments",

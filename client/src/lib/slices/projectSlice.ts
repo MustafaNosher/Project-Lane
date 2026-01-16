@@ -1,22 +1,23 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
 import { API_BASE_URL } from "@/config/routes";
+import axios from "axios";
+import apiClient from "../apiClient";
 import type { Project, CreateProjectData } from "@/types/projectTypes";
 import type { Workspace } from "@/types/workspaceTypes";
 
 interface ProjectState {
   projects: Project[];
-  currentWorkspace: Workspace | null;
   loading: boolean;
   error: string | null;
+  lastFetchedWorkspaceId: string | null;
 }
 
 const initialState: ProjectState = {
   projects: [],
-  currentWorkspace: null,
   loading: false,
   error: null,
+  lastFetchedWorkspaceId: null,
 };
 
 // Fetch projects by workspace ID
@@ -25,7 +26,7 @@ export const fetchProjectsByWorkspace = createAsyncThunk(
   async (workspaceId: string, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_BASE_URL}/workspace/${workspaceId}/projects`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -51,7 +52,7 @@ export const createProject = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_BASE_URL}/project/create/${workspaceId}`,
         projectData,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -74,7 +75,7 @@ export const fetchProjectDetails = createAsyncThunk(
   async (projectId: string, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_BASE_URL}/project/details/${projectId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -99,7 +100,7 @@ export const updateProjectThunk = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.patch(
+      const response = await apiClient.patch(
         `${API_BASE_URL}/project/${projectId}`,
         projectData,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -116,35 +117,81 @@ export const updateProjectThunk = createAsyncThunk(
   }
 );
 
-const projectSlice = createSlice({
+// Add Project Member
+export const addProjectMemberThunk = createAsyncThunk(
+  "projects/addMember",
+  async (
+    { projectId, memberId }: { projectId: string; memberId: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.patch(
+        `${API_BASE_URL}/project/${projectId}/members`,
+        { memberId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data.data;
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        return rejectWithValue(
+          error.response?.data?.message || "Failed to add project member"
+        );
+      }
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
+export const deleteProjectThunk = createAsyncThunk(
+  "projects/delete",
+  async (projectId: string, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.delete(
+        `${API_BASE_URL}/project/${projectId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return projectId;
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        return rejectWithValue(
+          error.response?.data?.message || "Failed to delete project"
+        );
+      }
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
+  const projectSlice = createSlice({
   name: "projects",
   initialState,
   reducers: {
     clearProjects: (state) => {
       state.projects = [];
-      state.currentWorkspace = null;
     },
   },
   extraReducers: (builder) => {
     // fetchProjectsByWorkspace
     builder
-      .addCase(fetchProjectsByWorkspace.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(
-        fetchProjectsByWorkspace.fulfilled,
-        (state, action: PayloadAction<{ projects: Project[]; workspace: Workspace }>) => {
-          state.loading = false;
-          state.projects = action.payload.projects;
-          state.currentWorkspace = action.payload.workspace;
-        }
-      )
-      .addCase(fetchProjectsByWorkspace.rejected, (state, action) => {
+    .addCase(fetchProjectsByWorkspace.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    })
+    .addCase(
+      fetchProjectsByWorkspace.fulfilled,
+      (state, action: PayloadAction<{ projects: Project[]; workspace: Workspace }, string, { arg: string }>) => {
         state.loading = false;
-        state.error = action.payload as string;
-      });
-
+        state.projects = action.payload.projects;
+        state.lastFetchedWorkspaceId = action.meta.arg;
+      }
+    )
+    .addCase(fetchProjectsByWorkspace.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+    
     // createProject
     builder
       .addCase(createProject.pending, (state) => {
@@ -163,6 +210,20 @@ const projectSlice = createSlice({
         state.error = action.payload as string;
       });
 
+    // deleteProject
+    builder
+      .addCase(deleteProjectThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteProjectThunk.fulfilled, (state, action: PayloadAction<string>) => {
+        state.loading = false;
+        state.projects = state.projects.filter(p => p._id !== action.payload);
+      })
+      .addCase(deleteProjectThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
     // fetchProjectDetails
     builder
       .addCase(fetchProjectDetails.fulfilled, (state, action: PayloadAction<Project>) => {
@@ -174,22 +235,36 @@ const projectSlice = createSlice({
         }
       });
 
-    // updateProject
-    builder
-      .addCase(updateProjectThunk.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(updateProjectThunk.fulfilled, (state, action: PayloadAction<Project>) => {
+    // updateProject & addProjectMember (both return updated project)
+    builder.addMatcher(
+      (action) => [updateProjectThunk.fulfilled.type, addProjectMemberThunk.fulfilled.type].includes(action.type),
+      (state, action: PayloadAction<Project>) => {
         state.loading = false;
         const index = state.projects.findIndex(p => p._id === action.payload._id);
         if (index !== -1) {
           state.projects[index] = action.payload;
         }
-      })
-      .addCase(updateProjectThunk.rejected, (state, action) => {
+      }
+    );
+
+    builder.addMatcher(
+      (action) => [updateProjectThunk.pending.type, addProjectMemberThunk.pending.type].includes(action.type), 
+      (state) => {
+        state.loading = true;
+      }
+    );
+
+    builder.addMatcher(
+      (action) => [updateProjectThunk.rejected.type, addProjectMemberThunk.rejected.type].includes(action.type),
+      (state, action: PayloadAction<unknown>) => {
         state.loading = false;
         state.error = action.payload as string;
-      });
+      }
+    );
+
+
+
+
   },
 });
 

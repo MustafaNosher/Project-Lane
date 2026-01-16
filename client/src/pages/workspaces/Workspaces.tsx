@@ -8,11 +8,13 @@ import { Loader2 } from "lucide-react";
 
 export default function Workspaces() {
   const dispatch = useAppDispatch();
-  const { workspaces, isLoading, error } = useAppSelector((state) => state.workspace);
-
+  const { workspaces, isLoading, error, isFetched } = useAppSelector((state) => state.workspace);
+  
   useEffect(() => {
-    dispatch(fetchWorkspaces());
-  }, [dispatch]);
+    if (!isFetched) {
+        dispatch(fetchWorkspaces());
+    }
+  }, [dispatch, isFetched]);
 
   return (
     <div className="flex flex-col gap-8 max-w-7xl mx-auto">
@@ -38,7 +40,7 @@ export default function Workspaces() {
         <div className="text-center py-20 rounded-xl border border-dashed border-white/10 bg-white/5">
             <h3 className="text-lg font-medium text-white mb-2">No workspaces yet</h3>
             <p className="text-slate-400 mb-6 max-w-sm mx-auto">
-                Create your first workspace to start collaborating with your team on projects using the button above.
+                Create your first workspace to start collaborating!
             </p>
         </div>
       ) : (

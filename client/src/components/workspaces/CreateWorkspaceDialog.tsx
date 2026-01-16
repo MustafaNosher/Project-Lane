@@ -9,24 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
+import { PRESET_COLORS } from "@/constants";
 
 interface CreateWorkspaceFormData {
     name: string;
     description: string;
     color: string;
 }
-
-const PRESET_COLORS = [
-    "#6366f1", // Indigo
-    "#a855f7", // Purple
-    "#ec4899", // Pink
-    "#ef4444", // Red
-    "#f97316", // Orange
-    "#eab308", // Yellow
-    "#22c55e", // Green
-    "#06b6d4", // Cyan
-    "#3b82f6", // Blue
-];
 
 export function CreateWorkspaceDialog() {
     const [open, setOpen] = useState(false);
@@ -48,14 +37,13 @@ export function CreateWorkspaceDialog() {
             reset();
         } catch (error) {
             console.error("Failed to create workspace:", error);
-            // Optionally set form error here
         }
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-0">
+                <Button className="bg-linear-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-0">
                     <Plus className="w-4 h-4 mr-2" />
                     New Workspace
                 </Button>

@@ -2,7 +2,7 @@ import type { User } from "./authTypes";
 
 export interface ProjectTask {
   _id: string;
-  status: "To Do" | "In Progress" | "Need Info" | "Completed" | "Cancelled";
+  status:"To Do" | "In Progress" | "Review" | "Done";
 }
 
 export interface ProjectMember {

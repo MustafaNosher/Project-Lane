@@ -32,7 +32,10 @@ const createProject = async (req , res)=>{
         //tags is an array of strings
         const tagSeperated = tags ? tags.split(",").map(tag => tag.trim()) : [];
 
-        const projectMembers = [ { user: req.user._id, role: "manager" }, ...(members || []) ];
+        const projectMembers = [ 
+            { user: req.user._id, role: "manager" }, 
+            ...(members || []).filter(m => m.user !== req.user._id.toString()) 
+        ];
 
         const project = await projectModel.create({
             title,
@@ -162,4 +165,97 @@ const updateProject = async (req, res) => {
   }
 };
 
-export { createProject, getProjectDetails, getProjectTasks, updateProject };
+const deleteProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const project = await projectModel.findById(projectId);
+
+    if (!project) {
+      return errorResponse(res, 404, "Project not found");
+    }
+
+    const isMember = project.members.some(
+      (member) => (member.user?._id || member.user).toString() === req.user._id.toString()
+    );
+
+    if (!isMember) {
+      return errorResponse(res, 403, "You are not a member of this project");
+    }
+
+    // Remove tasks associated with the project
+    await taskModel.deleteMany({ project: projectId });
+
+    // Remove project from workspace
+    await workspaceModel.findByIdAndUpdate(project.workspace, {
+      $pull: { projects: projectId },
+    });
+
+    // Delete the project
+    await projectModel.findByIdAndDelete(projectId);
+
+    return successResponse(res, 200, "Project deleted successfully");
+  } catch (error) {
+    console.error("Error in Deleting Project:", error);
+    return errorResponse(res, 500, "Internal server error");
+  }
+};
+
+const addProjectMember = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { memberId } = req.body;
+
+        const project = await projectModel.findById(projectId);
+
+        if (!project) {
+            return errorResponse(res, 404, "Project not found");
+        }
+
+        // Check verification
+        const isRequesterMember = project.members.some(
+            (member) => (member.user?._id || member.user).toString() === req.user._id.toString()
+        );
+
+        if (!isRequesterMember) {
+            return errorResponse(res, 403, "You are not a member of this project");
+        }
+
+        // Check if user is already a member
+        const isAlreadyMember = project.members.some(
+            (member) => (member.user?._id || member.user).toString() === memberId
+        );
+
+        if (isAlreadyMember) {
+            return errorResponse(res, 400, "User is already a member of this project");
+        }
+
+        // Verify user belongs to the workspace
+        const workspace = await workspaceModel.findById(project.workspace);
+        if (!workspace) {
+             return errorResponse(res, 404, "Workspace not found");
+        }
+
+        const isWorkspaceMember = workspace.members.some(
+            (member) => (member.user?._id || member.user).toString() === memberId
+        );
+
+        if (!isWorkspaceMember) {
+            return errorResponse(res, 400, "User must be a member of the workspace to be added to the project");
+        }
+
+        // Add member
+        project.members.push({ user: memberId, role: "member" });
+        await project.save();
+
+        const updatedProject = await projectModel.findById(projectId).populate("members.user", "name profilePicture");
+
+        return successResponse(res, 200, "Member added successfully", updatedProject);
+
+    } catch (error) {
+        console.error("Error adding project member:", error);
+        return errorResponse(res, 500, "Internal server error");
+    }
+}
+
+export { createProject, getProjectDetails, getProjectTasks, updateProject, deleteProject, addProjectMember };

@@ -13,7 +13,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"
+;
+import { ROUTES } from "@/config/routes";
 
 export function SignInForm() {
   const dispatch = useAppDispatch();
@@ -31,7 +33,7 @@ export function SignInForm() {
   async function onSubmit(values: any) {
     const result = await dispatch(loginUser(values));
     if (loginUser.fulfilled.match(result)) {
-       navigate("/dashboard");
+       navigate(ROUTES.DASHBOARD.BASE);
     }
   }
 

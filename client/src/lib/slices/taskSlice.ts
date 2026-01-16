@@ -1,19 +1,22 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
 import { API_BASE_URL } from "@/config/routes";
+import axios from "axios";
+import apiClient from "../apiClient";
 import type { Task, CreateTaskData } from "@/types/taskTypes";
 
 interface TaskState {
   tasks: Task[];
   loading: boolean;
   error: string | null;
+  lastFetchedProjectId: string | null;
 }
 
 const initialState: TaskState = {
   tasks: [],
   loading: false,
   error: null,
+  lastFetchedProjectId: null,
 };
 
 // Fetch tasks by project ID
@@ -22,7 +25,7 @@ export const fetchProjectTasks = createAsyncThunk(
   async (projectId: string, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_BASE_URL}/project/tasks/${projectId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -39,7 +42,7 @@ export const fetchTaskByIdThunk = createAsyncThunk(
   async (taskId: string, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_BASE_URL}/task/${taskId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -64,7 +67,7 @@ export const createTask = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_BASE_URL}/task/create/${projectId}`,
         taskData,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -90,7 +93,7 @@ export const updateTaskStatusThunk = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.patch(
+      const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -107,6 +110,32 @@ export const updateTaskStatusThunk = createAsyncThunk(
   }
 );
 
+// Update task title
+export const updateTaskTitleThunk = createAsyncThunk(
+  "tasks/updateTitle",
+  async (
+    { taskId, title }: { taskId: string; title: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.patch(
+        `${API_BASE_URL}/task/${taskId}/title`,
+        { title },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data.data;
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        return rejectWithValue(
+          error.response?.data?.message || "Failed to update title"
+        );
+      }
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
 // Update task description
 export const updateTaskDescriptionThunk = createAsyncThunk(
   "tasks/updateDescription",
@@ -116,7 +145,7 @@ export const updateTaskDescriptionThunk = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.patch(
+      const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/description`,
         { description },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -142,7 +171,7 @@ export const updateTaskPriorityThunk = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.patch(
+      const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/priority`,
         { priority },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -168,7 +197,7 @@ export const addSubTaskThunk = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_BASE_URL}/task/${taskId}/subtasks`,
         { title },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -194,7 +223,7 @@ export const updateSubTaskThunk = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.patch(
+      const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/subtasks/${subtaskId}`,
         { completed },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -220,7 +249,7 @@ export const updateTaskAssigneesThunk = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.patch(
+      const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/assignees`,
         { assignees },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -246,7 +275,7 @@ export const addCommentThunk = createAsyncThunk(
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_BASE_URL}/task/${taskId}/comments`,
         { text },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -263,6 +292,7 @@ export const addCommentThunk = createAsyncThunk(
   }
 );
 
+
 // Upload Attachment
 export const uploadAttachmentThunk = createAsyncThunk(
   "tasks/uploadAttachment",
@@ -275,7 +305,7 @@ export const uploadAttachmentThunk = createAsyncThunk(
       const formData = new FormData();
       formData.append("attachment", file);
 
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_BASE_URL}/task/${taskId}/attachments`,
         formData,
         {
@@ -290,6 +320,28 @@ export const uploadAttachmentThunk = createAsyncThunk(
       if (axios.isAxiosError(error) && error.response) {
         return rejectWithValue(
           error.response?.data?.message || "Failed to upload attachment"
+        );
+      }
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
+// Fetch My Tasks
+export const fetchMyTasksThunk = createAsyncThunk(
+  "tasks/fetchMyTasks",
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.get(
+        `${API_BASE_URL}/task/my-tasks`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data.data;
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        return rejectWithValue(
+          error.response?.data?.message || "Failed to fetch my tasks"
         );
       }
       return rejectWithValue(error.message || "Network error");
@@ -322,9 +374,10 @@ const taskSlice = createSlice({
       })
       .addCase(
         fetchProjectTasks.fulfilled,
-        (state, action: PayloadAction<Task[]>) => {
+        (state, action: PayloadAction<Task[], string, { arg: string }>) => {
           state.loading = false;
           state.tasks = action.payload;
+          state.lastFetchedProjectId = action.meta.arg;
         }
       )
       .addCase(fetchProjectTasks.rejected, (state, action) => {
@@ -347,12 +400,28 @@ const taskSlice = createSlice({
         state.error = action.payload as string;
       });
 
+    // fetchMyTasks
+    builder
+      .addCase(fetchMyTasksThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMyTasksThunk.fulfilled, (state, action: PayloadAction<Task[]>) => {
+        state.loading = false;
+        state.tasks = action.payload;
+      })
+      .addCase(fetchMyTasksThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
     // Generic update for task updates (status, description, priority, subtasks, comments)
     builder.addMatcher(
       (action) =>
         [
           fetchTaskByIdThunk.fulfilled.type,
           updateTaskStatusThunk.fulfilled.type,
+          updateTaskTitleThunk.fulfilled.type,
           updateTaskDescriptionThunk.fulfilled.type,
           updateTaskPriorityThunk.fulfilled.type,
           updateTaskAssigneesThunk.fulfilled.type,

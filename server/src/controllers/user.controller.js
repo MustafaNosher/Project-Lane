@@ -1,10 +1,11 @@
 import User from "../models/user.js";
+import Project from "../models/project.js";
+import Task from "../models/task.js";
 import bcrypt from "bcryptjs";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { validateRequestBody } from "../utils/validateRequest.js";
 
 const getUserProfile = async (req, res)=>{
-
     try{
         const user = await User.findById(req.user._id);
         if(!user){
@@ -43,6 +44,7 @@ const updateUserProfile = async (req, res) => {
     }
 
     if (name) user.name = name;
+    // Save profile picture if provided (base64 string)
     if (profilePicture) user.profilePicture = profilePicture;
 
     await user.save();
@@ -89,8 +91,40 @@ const updatePassword = async (req, res) => {
   }
 };
 
+
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({ _id: { $ne: req.user._id } }).select("name email profilePicture");
+    return successResponse(res, 200, "Users fetched successfully", users);
+  } catch (error) {
+    console.error("Error in Fetching All Users:", error);
+    return errorResponse(res, 500, "Internal server error");
+  }
+};
+
+const getDashboardStats = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const [activeProjectsCount, pendingTasksCount] = await Promise.all([
+      Project.countDocuments({ "members.user": userId }),
+      Task.countDocuments({ assignees: userId, status: { $ne: "Done" } }),
+    ]);
+
+    return successResponse(res, 200, "Dashboard stats fetched successfully", {
+      activeProjectsCount,
+      pendingTasksCount,
+    });
+  } catch (error) {
+    console.error("Error in Fetching Dashboard Stats:", error);
+    return errorResponse(res, 500, "Internal server error");
+  }
+};
+
 export {
     getUserProfile,
     updateUserProfile,
-    updatePassword
+    updatePassword,
+    getAllUsers,
+    getDashboardStats
 }

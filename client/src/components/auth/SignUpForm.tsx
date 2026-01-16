@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import {ROUTES} from "@/config/routes";
+
 
 export function SignUpForm() {
   const dispatch = useAppDispatch();
@@ -34,8 +36,7 @@ export function SignUpForm() {
   async function onSubmit(values: any) {
     const result = await dispatch(registerUser(values));
     if (registerUser.fulfilled.match(result)) {
-       // Maybe redirect to login or dashboard
-       navigate("/auth/signin"); // Let them login
+       navigate(ROUTES.AUTH.SIGN_IN);
     }
   }
 

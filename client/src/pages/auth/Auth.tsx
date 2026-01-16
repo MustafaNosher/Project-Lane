@@ -36,11 +36,11 @@ export default function AuthPage() {
         {/* Content */}
         <div className="relative z-10 w-full max-w-md">
             <div className="mb-8 text-center">
-                <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-sm">
+                <h1 className="text-5xl font-extrabold tracking-tight bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-sm">
                     ProjectLane
                 </h1>
                 <p className="mt-2 text-sm font-medium text-slate-400 uppercase tracking-widest">
-                    Next Gen Management
+                    Manage What’s Next
                 </p>
             </div>
 
@@ -85,7 +85,7 @@ export default function AuthPage() {
         </div>
         
         {/* Footer info/decoration */}
-       <div className="absolute bottom-4 text-xs text-slate-600 font-mono">
+       <div className="absolute bottom-4 text-xs text-slate-300 font-mono">
         © {new Date().getFullYear()} ProjectLane. All rights reserved.
         </div>
     </div>

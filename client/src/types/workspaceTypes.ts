@@ -21,6 +21,7 @@ export interface WorkspaceState {
     currentWorkspace: Workspace | null;
     isLoading: boolean;
     error: string | null;
+    isFetched: boolean;
 }
 
 export interface CreateWorkspacePayload {

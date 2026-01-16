@@ -1,16 +1,16 @@
 
 import { NavLink } from "react-router-dom";
-import { Layout, CheckSquare, LogOut, LayoutDashboard } from "lucide-react";
+import { Layout, CheckSquare, LogOut, LayoutDashboard, CreditCard } from "lucide-react";
 import { useAppDispatch } from "@/lib/store";
 import { logoutUser } from "@/lib/slices/authSlice";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Dashboard from "@/pages/Dashboard";
 
 const sidebarLinks = [
   {name:"Dashboard", href: "/dashboard", icon: LayoutDashboard},
   { name: "Workspaces", href: "/workspaces", icon: Layout },
-  { name: "My Tasks", href: "/tasks", icon: CheckSquare },
+  { name: "My Tasks", href: "/my-tasks", icon: CheckSquare },
+  {name : "Payment" , href: "/payment", icon: CreditCard}
 ];
 
 export function Sidebar() {

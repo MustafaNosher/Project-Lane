@@ -103,7 +103,7 @@ export default function ProjectDetails() {
   const project = useAppSelector((state) => 
     state.projects.projects.find((p) => p._id === projectId)
   );
-  const { tasks, loading: tasksLoading, error: tasksError } = useAppSelector((state) => state.tasks);
+  const { tasks, loading: tasksLoading, error: tasksError, lastFetchedProjectId } = useAppSelector((state) => state.tasks);
   const { loading: projectLoading, error: projectError } = useAppSelector((state) => state.projects);
 
   const [activeTask, setActiveTask] = useState<any>(null);
@@ -155,9 +155,11 @@ export default function ProjectDetails() {
   useEffect(() => {
     if (projectId) {
       dispatch(fetchProjectDetails(projectId));
-      dispatch(fetchProjectTasks(projectId));
+      if (projectId !== lastFetchedProjectId) {
+          dispatch(fetchProjectTasks(projectId));
+      }
     }
-  }, [dispatch, projectId]);
+  }, [dispatch, projectId, lastFetchedProjectId]);
 
   if (projectError || tasksError) {
     return (

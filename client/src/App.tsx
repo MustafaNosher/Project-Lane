@@ -10,6 +10,10 @@ import Workspaces from "./pages/workspaces/Workspaces";
 import WorkspaceDetails from "./pages/projects/WorkspaceDetails.tsx";
 import ProjectDetails from "./pages/projects/ProjectDetails.tsx";
 import TaskDetailsPage from "./pages/tasks/TaskDetailsPage.tsx";
+import ProfileSettings from "./pages/profile/profileSettings.tsx";
+import MyTasksPage from "./pages/tasks/MyTasksPage.tsx";
+import PaymentPage from "./pages/payment/paymentPage.tsx";
+import { Toaster } from "sonner";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -27,6 +31,11 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 function App() {
   return (
     <BrowserRouter>
+
+      <Toaster position="top-center" richColors
+      duration={2000}
+      theme="system"
+      />
       <Routes>
         <Route path={ROUTES.AUTH.SIGN_IN} element={<AuthPage />} />
         <Route path={ROUTES.AUTH.SIGN_UP} element={<AuthPage />} />
@@ -47,7 +56,9 @@ function App() {
           <Route path="/workspace/:workspaceId" element={<WorkspaceDetails />} />
           <Route path="/projects/:projectId" element={<ProjectDetails />} />
           <Route path="/task/:taskId" element={<TaskDetailsPage />} />
-          {/* Add more protected routes here later, e.g. /tasks */}
+          <Route path="/profile" element={<ProfileSettings />} />
+          <Route path="/my-tasks" element={<MyTasksPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
         </Route>
         
         {/* Catch all */}

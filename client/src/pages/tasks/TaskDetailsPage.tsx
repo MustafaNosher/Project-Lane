@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { 
   fetchTaskByIdThunk,
+
+  updateTaskTitleThunk,
   updateTaskDescriptionThunk, 
   updateTaskPriorityThunk, 
   addSubTaskThunk, 
@@ -25,8 +27,8 @@ import {
   ChevronLeft,
   Layout,
   FileText,
-  Download,
-  ExternalLink
+  ExternalLink,
+  Pencil
 } from "lucide-react";
 import { uploadAttachmentThunk } from "@/lib/slices/taskSlice";
 import { API_BASE_URL } from "@/config/routes";
@@ -40,9 +42,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { ALLOWED_MIME_TYPES,ALLOWED_EXTENSIONS,MAX_FILE_SIZE} from "../../constants.ts"
+import { formatFileSize } from "@/utils/utilityFunctions";
 
 export default function TaskDetailsPage() {
-  const { taskId } = useParams<{ taskId: string }>();
+
+  const { taskId } = useParams<{ taskId: string }>(); // used to read params from URL
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   
@@ -55,9 +59,11 @@ export default function TaskDetailsPage() {
   const { loading } = useAppSelector((state) => state.tasks);
 
   const [description, setDescription] = useState("");
+  const [title, setTitle] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
   const [newComment, setNewComment] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingTitle , setIsEditingTitle] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -93,14 +99,22 @@ export default function TaskDetailsPage() {
   useEffect(() => {
     if (task) {
       setDescription(task.description || "");
+      setTitle(task.title || "");
     }
   }, [task]);
 
   const handleUpdateDescription = () => {
     if (taskId && description !== task?.description) {
-      dispatch(updateTaskDescriptionThunk({ taskId, description }));
+      dispatch(updateTaskDescriptionThunk({ taskId, description: description.trim() }));
     }
     setIsEditingDescription(false);
+  };
+
+  const handleUpdateTitle = () => {
+    if (taskId && title !== task?.title) {
+      dispatch(updateTaskTitleThunk({ taskId, title : title.trim() }));
+    }
+    setIsEditingTitle(false);
   };
 
   const handleUpdatePriority = (priority: string) => {
@@ -166,15 +180,6 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   }
 };
 
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   if (loading && !task) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -197,6 +202,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 lg:p-10">
       <div className="max-w-6xl mx-auto">
+        
         {/* Header/Navigation */}
         <div className="mb-8 flex items-center justify-between">
           <Button 
@@ -225,9 +231,32 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 }`}>
                   {task.status}
                 </span>
-                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-slate-400">
-                  {task.title}
-                </h1>
+                {isEditingTitle ? (
+                  <div className="flex gap-2 items-center flex-1">
+                    <Input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="text-xl font-bold bg-slate-800/50 border-white/10 h-10"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={handleUpdateTitle}>Save</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditingTitle(false)}>Cancel</Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 group">
+                      <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-slate-400">
+                        {task.title}
+                      </h1>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsEditingTitle(true)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-slate-400 hover:text-white"
+                      >
+                         <Pencil className="w-4 h-4" />
+                      </Button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -277,6 +306,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     <button
                       onClick={() => handleToggleSubtask(sub._id, !sub.completed)}
                       className="transition-colors"
+                      disabled={sub.completed}
                     >
                       {sub.completed ? (
                         <CheckCircle2 className="w-5 h-5 text-emerald-500" />

@@ -5,6 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { fetchCurrentUser } from "@/lib/slices/authSlice";
 
+
 export default function RootLayout() {
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
@@ -24,8 +25,7 @@ export default function RootLayout() {
         </div>
 
       <Navbar />
-      <Sidebar />
-      
+      <Sidebar />      
       <main className="pl-0 md:pl-64 pt-[73px] min-h-screen relative z-10">
         <div className="p-4 md:p-8">
             <Outlet />

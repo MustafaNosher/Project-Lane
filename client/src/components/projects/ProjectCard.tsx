@@ -1,6 +1,7 @@
 import type { Project } from "@/types/projectTypes";
 import { CheckSquare, Clock, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { TASK_STATUS_WEIGHT } from "@/constants";
 
 interface ProjectCardProps {
   project: Project;
@@ -29,7 +30,17 @@ export function ProjectCard({ project }: ProjectCardProps) {
     day: "numeric",
     year: "numeric",
   });
-
+  
+  
+  function calculateProgress(project: Project): number {
+    const tasks = Array.isArray(project.tasks) ? project.tasks : [];
+    if (tasks.length === 0) return 0;
+    const totalProgress = tasks.reduce((sum, task) => {
+      return sum + (TASK_STATUS_WEIGHT[task.status] ?? 0);
+    }, 0);
+    return Math.round((totalProgress / tasks.length) * 100);
+  }
+  
   return (
     <Link
       to={`/projects/${project._id}`}
@@ -57,12 +68,12 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <div>
           <div className="flex justify-between text-xs mb-1.5">
             <span className="text-slate-500">Progress</span>
-            <span className="text-slate-300">{project.progress}%</span>
+            <span className="text-slate-300">{calculateProgress(project)}%</span>
           </div>
           <div className="h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
             <div
               className="h-full bg-indigo-500 transition-all duration-500 ease-out"
-              style={{ width: `${project.progress}%` }}
+              style={{ width: `${calculateProgress(project)}%` }}
             />
           </div>
         </div>

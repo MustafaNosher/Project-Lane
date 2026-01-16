@@ -5,12 +5,19 @@ export interface User {
   profilePicture?: string;
 }
 
+export interface DashboardStats {
+  activeProjectsCount: number;
+  pendingTasksCount: number;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  allUsers: User[] | null;
+  dashboardStats: DashboardStats | null;
 }
 
 export interface LoginResponse {
