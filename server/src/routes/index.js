@@ -4,9 +4,11 @@ import workspaceRoutes from "./workspace.js";
 import userRoutes from "./user.js";
 import projectRoutes from "./project.js";
 import taskRoutes from "./task.js"
+import stripeRoutes from "./stripe.js";
 const router = express.Router();
 
 router.use("/auth", authRoutes);
+router.use("/stripe", stripeRoutes);
 router.use("/workspace", workspaceRoutes);
 router.use("/user", userRoutes);
 router.use("/project", projectRoutes);

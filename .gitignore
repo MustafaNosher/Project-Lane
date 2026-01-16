@@ -19,4 +19,5 @@ server/build/
 # Uploads folder
 uploads/
 
-
+# Log files
+*.log
