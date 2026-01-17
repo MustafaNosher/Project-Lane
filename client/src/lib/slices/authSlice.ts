@@ -68,22 +68,14 @@ export const logoutUser = createAsyncThunk(
   }
 });
 
+// fetchCurrentUser
 export const fetchCurrentUser = createAsyncThunk<
   User,
   void,
   { rejectValue: string }
 >("auth/fetchCurrentUser", async (_, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-        return rejectWithValue("No token found");
-    }
-
-    const response = await apiClient.get(API_ROUTES.USER.GET_PROFILE, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
+    const response = await apiClient.get(API_ROUTES.USER.GET_PROFILE);
     return response.data.data;
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
@@ -99,10 +91,7 @@ export const fetchAllUsers = createAsyncThunk<
   { rejectValue: string }
 >("auth/fetchAllUsers", async (_, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("token");
-    const response = await apiClient.get(API_ROUTES.USER.GET_ALL, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await apiClient.get(API_ROUTES.USER.GET_ALL);
     return response.data.data;
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
@@ -118,10 +107,7 @@ export const fetchDashboardStats = createAsyncThunk<
   { rejectValue: string }
 >("auth/fetchDashboardStats", async (_, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("token");
-    const response = await apiClient.get(API_ROUTES.USER.GET_STATS, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await apiClient.get(API_ROUTES.USER.GET_STATS);
     return response.data.data;
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
@@ -137,10 +123,7 @@ export const updateProfile = createAsyncThunk<
   { rejectValue: string }
 >("auth/updateProfile", async (userData, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("token");
-    const response = await apiClient.put(API_ROUTES.USER.UPDATE_PROFILE, userData, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await apiClient.put(API_ROUTES.USER.UPDATE_PROFILE, userData);
     return response.data.data;
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
@@ -156,10 +139,7 @@ export const updatePassword = createAsyncThunk<
   { rejectValue: string }
 >("auth/updatePassword", async (passwordData, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("token");
-    await apiClient.put(API_ROUTES.USER.CHANGE_PASSWORD, passwordData, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    await apiClient.put(API_ROUTES.USER.CHANGE_PASSWORD, passwordData);
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
       return rejectWithValue(error.response.data.message || "Update password failed");

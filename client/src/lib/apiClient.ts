@@ -4,6 +4,20 @@ import { toast } from "sonner";
 
 const apiClient = axios.create();
 
+// Request interceptor to add auth token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // A response interceptor to show toast messages globally for non-get requests
 apiClient.interceptors.response.use(
   (response) => {

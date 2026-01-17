@@ -3,6 +3,9 @@ export interface User {
   name: string;
   email: string;
   profilePicture?: string;
+  isPaid?: boolean;
+  plan?: string;
+  stripeSessionId?: string;
 }
 
 export interface DashboardStats {

@@ -1,14 +1,14 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import morgan from "morgan";
 import path from "path";
 import http from "http";
 import { initSocket } from "./src/libs/socket.js";
 import routes from "./src/routes/index.js";
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +22,10 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
-
+app.use(
+  "/api/payment/webhook",
+  express.raw({ type: "application/json" })
+);
 app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 app.use("/api", routes); 
 

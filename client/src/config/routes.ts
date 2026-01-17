@@ -37,5 +37,9 @@ export const API_ROUTES = {
     CREATE: `${API_BASE_URL}/workspace`,
     ADD_MEMBER: (workspaceId: string) => `${API_BASE_URL}/workspace/${workspaceId}/members`,
     DELETE: (workspaceId: string) => `${API_BASE_URL}/workspace/${workspaceId}`,
+  },
+  PAYMENT: {
+    CREATE_SESSION: `${API_BASE_URL}/payment/create-checkout-session`,
+    CREATE_PORTAL_SESSION: `${API_BASE_URL}/payment/create-portal-session`,
   }
 } as const;

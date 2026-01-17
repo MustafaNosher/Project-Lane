@@ -18,9 +18,25 @@ const userSchema = new mongoose.Schema({
         select:false
     },
     profilePicture: { type: String }, //kept optional as of now
-},
 
-{ timestamps: true }
+    stripeCustomerId: {
+      type: String,
+    },
+    stripeSessionId: {
+      type: String,
+    },
+    plan: {
+      type: String,
+      enum: ["free", "pro"],
+      default: "free",
+    },
+
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
+},
+  { timestamps: true }
 )
 
 export default mongoose.model("User", userSchema);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { 
@@ -66,6 +66,12 @@ export default function TaskDetailsPage() {
   const [isEditingTitle , setIsEditingTitle] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+
+
   
   const serverUrl = API_BASE_URL.replace('/api', '');
 
@@ -179,6 +185,50 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 };
+
+const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value;
+  const cursor = e.target.selectionStart;
+
+  setNewComment(value);
+  setCursorPosition(cursor);
+
+  const textBeforeCursor = value.slice(0, cursor || 0);
+  const match = textBeforeCursor.match(/@(\w*)$/);
+
+  if (match) {
+    setShowMentions(true);
+    setMentionQuery(match[1]);
+  } else {
+    setShowMentions(false);
+    setMentionQuery("");
+  }
+};
+
+const insertMention = (name: string) => {
+
+  if (cursorPosition === null) return;
+
+  const before = newComment.slice(0, cursorPosition).replace(/@\w*$/, `@${name} `);
+  const after = newComment.slice(cursorPosition);
+
+  setNewComment(before + after);
+  setShowMentions(false);
+  setMentionQuery("");
+};
+
+
+const members = project?.members || [];
+
+const filteredMembers = members.filter((m) =>
+  m.user.name.toLowerCase().includes(mentionQuery.toLowerCase())
+);
+const uniqueMembers = useMemo(() => {
+  return Array.from(
+    new Map(filteredMembers.map(m => [m.user._id, m])).values()
+  );
+}, [filteredMembers]);
+
 
   if (loading && !task) {
     return (
@@ -504,7 +554,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <form onSubmit={handleAddComment} className="relative">
                 <Input
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  // onChange={(e) => setNewComment(e.target.value)}
+                  onChange={handleCommentChange}
                   placeholder="Write a comment..."
                   className="bg-slate-800/50 border-white/10 pr-12 focus:border-indigo-500/50 h-12 rounded-xl"
                 />
@@ -516,7 +567,28 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 >
                   <Send className="w-4 h-4" />
                 </Button>
-              </form>
+                
+                {showMentions && filteredMembers.length > 0 && (
+                  <div className="absolute bottom-14 left-0 w-64 bg-slate-900 border border-white/10 rounded-xl shadow-lg z-50">
+                    {uniqueMembers.map((member) => (
+                      <button
+                        key={member.user._id} 
+                        type="button"
+                        onClick={() => insertMention(member.user.name)}
+                        className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-slate-800"
+                      >
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={member.user.profilePicture} />
+                          <AvatarFallback>
+                            {member.user.name.slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs">{member.user.name}</span>
+                      </button>
+                    ))}
+                  </div>
+            )}
+            </form>
           </div>
         </div>
       </div>

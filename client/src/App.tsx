@@ -13,6 +13,8 @@ import TaskDetailsPage from "./pages/tasks/TaskDetailsPage.tsx";
 import ProfileSettings from "./pages/profile/profileSettings.tsx";
 import MyTasksPage from "./pages/tasks/MyTasksPage.tsx";
 import PaymentPage from "./pages/payment/paymentPage.tsx";
+import PaymentSuccess from "./pages/payment/PaymentSuccess.tsx";
+import PaymentCancel from "./pages/payment/PaymentCancel.tsx";
 import { Toaster } from "sonner";
 
 // Protected Route Component
@@ -59,6 +61,8 @@ function App() {
           <Route path="/profile" element={<ProfileSettings />} />
           <Route path="/my-tasks" element={<MyTasksPage />} />
           <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
         </Route>
         
         {/* Catch all */}
