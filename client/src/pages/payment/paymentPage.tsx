@@ -90,7 +90,21 @@ export default function PaymentPage() {
             className="w-full py-2.5 px-4 rounded-lg bg-secondary/50 text-secondary-foreground font-medium cursor-default"
             disabled
           >
+          {!isPro ? (
+            <button
+            className="w-full py-2.5 px-4 rounded-lg bg-secondary/50 text-secondary-foreground font-medium cursor-default"
+            disabled
+          >
             Active Plan
+          </button>
+          ) : (
+            <button
+            className="w-full py-2.5 px-4 rounded-lg border border-border text-muted-foreground font-medium cursor-not-allowed"
+            disabled
+          >
+            Downgrade unavailable
+            </button>
+          )}
           </button>
         </div>
 
