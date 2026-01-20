@@ -4,6 +4,7 @@ import { API_BASE_URL } from "@/config/routes";
 import axios from "axios";
 import apiClient from "../apiClient";
 import type { Task, CreateTaskData } from "@/types/taskTypes";
+import { logoutUser } from "./authSlice";
 
 interface TaskState {
   tasks: Task[];
@@ -366,6 +367,14 @@ const taskSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    // Clear state on logout
+    builder.addCase(logoutUser.fulfilled, (state) => {
+      state.tasks = [];
+      state.loading = false;
+      state.error = null;
+      state.lastFetchedProjectId = null;
+    });
+
     // fetchProjectTasks
     builder
       .addCase(fetchProjectTasks.pending, (state) => {
@@ -441,6 +450,7 @@ const taskSlice = createSlice({
         }
       }
     );
+
   },
 });
 

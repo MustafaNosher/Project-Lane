@@ -9,6 +9,8 @@ import path from "path";
 import http from "http";
 import { initSocket } from "./src/libs/socket.js";
 import routes from "./src/routes/index.js";
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
 
 const app = express();
 const server = http.createServer(app);
@@ -18,16 +20,24 @@ initSocket(server);
 
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true
+}));
+app.use(cookieParser());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    if (req.originalUrl.startsWith("/api/payment/webhook")) {
+      req.rawBody = buf.toString();
+    }
+  },
+}));
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
-app.use(
-  "/api/payment/webhook",
-  express.raw({ type: "application/json" })
-);
+
 app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 app.use("/api", routes); 
+app.use(helmet());
 
 mongoose.connect(process.env.MONGO_URL)
 .then(()=> console.log("Database Connected Successfuly!"))

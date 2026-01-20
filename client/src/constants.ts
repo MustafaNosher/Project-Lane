@@ -1,4 +1,10 @@
 import type { ProjectTask } from "@/types/projectTypes";
+import { 
+  CheckCircle2, 
+  Circle, 
+  RefreshCcw, 
+  AlertCircle 
+} from "lucide-react";
 
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
@@ -31,10 +37,18 @@ const TASK_STATUS_WEIGHT: Record<ProjectTask['status'], number> = {
   "Done": 1,
 };
 
+const STATUS_COLUMNS = [
+  { id: "To Do", label: "To Do", icon: Circle, color: "text-slate-400" },
+  { id: "In Progress", label: "In Progress", icon: RefreshCcw, color: "text-blue-400" },
+  { id: "Review", label: "Review", icon: AlertCircle, color: "text-amber-400" },
+  { id: "Done", label: "Done", icon: CheckCircle2, color: "text-emerald-400" },
+];
+
 export {
     ALLOWED_MIME_TYPES,
     ALLOWED_EXTENSIONS,
     MAX_FILE_SIZE,
     PRESET_COLORS,
-    TASK_STATUS_WEIGHT
+    TASK_STATUS_WEIGHT,
+    STATUS_COLUMNS
 }

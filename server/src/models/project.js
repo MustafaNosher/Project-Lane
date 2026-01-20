@@ -30,7 +30,7 @@ const projectSchema = new mongoose.Schema(
         },
         role: {
           type: String,
-          enum: ["manager", "contributor", "viewer"],
+          enum: ["manager", "contributor"],
           default: "contributor",
         },
       },

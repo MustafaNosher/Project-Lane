@@ -8,13 +8,13 @@ import Comment from "../models/comment.js";
 
 const createWorkspace = async (req, res) => {
   try {
-     const errorMsg = validateRequestBody(req.body, ["name", "description", "color"]);
+     const errorMsg = validateRequestBody(req.body, ["name", "color"]);
 
      if (errorMsg) return errorResponse(res, 400, errorMsg);
-
-    const { name, description, color } = req.body;
-
-    const workspace = await Workspace.create({
+     
+     const { name, description, color } = req.body;
+     
+     const workspace = await Workspace.create({
       name,
       description,
       color,
@@ -37,7 +37,10 @@ const createWorkspace = async (req, res) => {
 const getWorkspaces = async (req, res) => {
   try {
     const workspaces = await Workspace.find({
-      "members.user": req.user._id,
+      $or: [
+        { owner: req.user._id },
+        { "members.user": req.user._id }
+      ]
     }).sort({ createdAt: -1 });
 
     return successResponse(res, 200, "Workspaces fetched successfully", workspaces);
@@ -51,8 +54,12 @@ const getWorkspaceDetails = async (req, res) => {
   try {
     const { workspaceId } = req.params;
 
-    const workspace = await Workspace.findById({
+    const workspace = await Workspace.findOne({
       _id: workspaceId,
+      $or: [
+        { owner: req.user._id },
+        { "members.user": req.user._id }
+      ]
     }).populate("members.user", "name email profilePicture");
 
     if (!workspace) {
@@ -72,7 +79,10 @@ const getWorkspaceProjects = async (req, res) => {
 
     const workspace = await Workspace.findOne({
       _id: workspaceId,
-      "members.user": req.user._id,
+      $or: [
+        { owner: req.user._id },
+        { "members.user": req.user._id }
+      ]
     }).populate("members.user", "name email profilePicture");
 
     if (!workspace) {
@@ -166,23 +176,33 @@ const deleteWorkspace = async (req, res) => {
     if (workspace.owner.toString() !== req.user._id.toString()) {
       return errorResponse(res, 403, "Only the workspace owner can delete the workspace");
     }
+    // Find all projects associated with this workspace
+    const projects = await Project.find({ workspace: workspaceId });
+    const projectIds = projects.map(project => project._id);
 
-    const projectIds = await Project.find({ workspace: workspaceId }).distinct("_id");
+    console.log(`Found ${projectIds.length} projects to delete for workspace ${workspaceId}`);
 
     if (projectIds.length > 0) {
-      // Find all tasks to get their IDs for comment deletion
-      const tasks = await Task.find({ project: { $in: projectIds } }).select("_id");
+      // Find all tasks associated with these projects
+      const tasks = await Task.find({ project: { $in: projectIds } });
       const taskIds = tasks.map(task => task._id);
 
+      console.log(`Found ${taskIds.length} tasks to delete`);
+
       if (taskIds.length > 0) {
-        await Comment.deleteMany({ task: { $in: taskIds } });
+        // Delete all comments associated with these tasks
+        const deleteCommentsResult = await Comment.deleteMany({ task: { $in: taskIds } });
+        console.log(`Deleted ${deleteCommentsResult.deletedCount} comments`);
       }
 
-      await Task.deleteMany({ project: { $in: projectIds } });
+      // Delete all tasks
+      const deleteTasksResult = await Task.deleteMany({ project: { $in: projectIds } });
+      console.log(`Deleted ${deleteTasksResult.deletedCount} tasks`);
     }
 
-    // Delete all projects in this workspace
-    await Project.deleteMany({ workspace: workspaceId });
+    // Delete all projects
+    const deleteProjectsResult = await Project.deleteMany({ workspace: workspaceId });
+    console.log(`Deleted ${deleteProjectsResult.deletedCount} projects`);
 
     // Delete the workspace itself
     await Workspace.findByIdAndDelete(workspaceId);

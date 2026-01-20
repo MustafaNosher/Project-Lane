@@ -69,6 +69,7 @@ export function CreateTaskDialog({ isOpen, onClose, project }: CreateTaskDialogP
       console.error("Failed to create task:", error);
     }
   };
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -164,6 +165,7 @@ export function CreateTaskDialog({ isOpen, onClose, project }: CreateTaskDialogP
               id="task-dueDate"
               name="dueDate"
               type="date"
+              min={today}
               value={formData.dueDate}
               onChange={handleChange}
               className="bg-slate-900 border-white/10 focus-visible:ring-indigo-500"
@@ -202,7 +204,6 @@ export function CreateTaskDialog({ isOpen, onClose, project }: CreateTaskDialogP
             >
               Cancel
             </Button>
-            
             <Button
               type="submit"
               disabled={loading}

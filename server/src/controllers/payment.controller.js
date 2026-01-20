@@ -3,16 +3,12 @@ import Stripe from "stripe";
 import dotenv from "dotenv";
 dotenv.config();
 
-// Ensure key is present
 if (!process.env.STRIPE_SECRET_KEY) {
     console.error("STRIPE_SECRET_KEY is missing in environment variables.");
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
-/**
- * CREATE CHECKOUT SESSION (SUBSCRIPTION)
- */
 export const createCheckOutSession = async (req, res) => {
   try {
     const { successUrl, cancelUrl } = req.body;
@@ -76,9 +72,6 @@ export const createCheckOutSession = async (req, res) => {
   }
 };
 
-/**
- * CREATE CUSTOMER PORTAL SESSION
- */
 export const createCustomerPortal = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -95,7 +88,7 @@ export const createCustomerPortal = async (req, res) => {
 
         const portalSession = await stripe.billingPortal.sessions.create({
             customer: user.stripeCustomerId,
-            return_url: returnUrl || process.env.CLIENT_URL || "http://localhost:3000", // Fallback
+            return_url: returnUrl || process.env.CLIENT_URL || "http://localhost:3000", 
         });
 
         return res.status(200).json({
@@ -112,9 +105,7 @@ export const createCustomerPortal = async (req, res) => {
     }
 };
 
-/**
- * GET CHECKOUT SESSION DETAILS
- */
+
 export const getCheckoutSessionDetails = async (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -141,16 +132,13 @@ export const getCheckoutSessionDetails = async (req, res) => {
   }
 };
 
-/**
- * STRIPE WEBHOOK
- */
 export const handleStripeWebhook = async (req, res) => {
   const signature = req.headers["stripe-signature"];
   let event;
 
   try {
     event = stripe.webhooks.constructEvent(
-      req.body,
+      req.rawBody || req.body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
     );
@@ -160,6 +148,10 @@ export const handleStripeWebhook = async (req, res) => {
   }
 
   try {
+    console.log(`Received Stripe Webhook Event: ${event.type}`);
+    if (event.type === 'checkout.session.completed') {
+        console.log('Event Data Object:', JSON.stringify(event.data.object, null, 2));
+    }
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
@@ -167,6 +159,10 @@ export const handleStripeWebhook = async (req, res) => {
         const customerId = session.customer;
         const subscriptionId = session.subscription;
 
+        console.log(`Processing checkout.session.completed for User: ${userId}, Customer: ${customerId}`);
+        console.log("Full Session Metadata:", session.metadata);
+        console.log("Full Session Object keys:", Object.keys(session));
+        
         if (userId && customerId) {
           await User.findByIdAndUpdate(userId, {
             stripeCustomerId: customerId,
@@ -176,6 +172,8 @@ export const handleStripeWebhook = async (req, res) => {
             stripeSessionId: session.id, 
           });
           console.log(`User ${userId} upgraded to Pro.`);
+        } else {
+            console.error("Missing userId or customerId in session metadata/object");
         }
         break;
       }

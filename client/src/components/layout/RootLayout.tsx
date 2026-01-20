@@ -4,6 +4,9 @@ import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
 import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { fetchCurrentUser } from "@/lib/slices/authSlice";
+import { socket } from "@/lib/socket";
+import { addNotification } from "@/lib/slices/notificationSlice"; // Updated import path to match file location
+import { toast } from "sonner";
 
 
 export default function RootLayout() {
@@ -15,6 +18,26 @@ export default function RootLayout() {
       dispatch(fetchCurrentUser());
     }
   }, [isAuthenticated, user, dispatch]);
+
+  useEffect(() => {
+      if (user?._id) {
+          if (!socket.connected) {
+              socket.connect();
+          }
+          socket.emit("join_user_room", user._id);
+          
+          const handleNotification = (notification: any) => {
+             dispatch(addNotification(notification));
+             toast.info(notification.message);
+          };
+
+          socket.on("notification", handleNotification);
+
+          return () => {
+              socket.off("notification", handleNotification);
+          }
+      }
+  }, [user, socket, dispatch]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30 dark font-sans">

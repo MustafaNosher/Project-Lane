@@ -35,42 +35,35 @@ export default function ProfileSettings() {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = await dispatch(updateProfile(profileData));
-    if (updateProfile.fulfilled.match(result)) {
-      toast.success("Profile Updated", {
-        description: "Your profile information has been successfully updated.",
-      });
-    } else {
-      toast.error("Update Failed", {
-        description: (result.payload as string) || "Something went wrong.",
-      });
-    }
+    await dispatch(updateProfile(profileData));
   };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error("Error", {
+        description: "All fields are required.",
+      });
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+    toast.error("Error", {
+      description: "New password must be at least 6 characters long.",
+    });
+    return;
+  }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error("Error", {
         description: "New passwords do not match.",
       });
       return;
     }
-
-    const result = await dispatch(updatePassword({
+    await dispatch(updatePassword({
       oldPassword: passwordData.oldPassword,
       newPassword: passwordData.newPassword,
     }));
-
-    if (updatePassword.fulfilled.match(result)) {
-      toast.success("Password Changed", {
-        description: "Your password has been successfully updated.",
-      });
-      setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
-    } else {
-      toast.error("Password Update Failed", {
-        description: (result.payload as string) || "Something went wrong.",
-      });
-    }
+    setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+   
   };
 
   return (

@@ -98,7 +98,10 @@ export default function TaskDetailsPage() {
 
   useEffect(() => {
     if (task?.project && !project) {
-      dispatch(fetchProjectDetails(task.project));
+      const projectId = typeof task.project === 'string' ? task.project : (task.project as any)._id;
+      if (projectId) {
+         dispatch(fetchProjectDetails(projectId));
+      }
     }
   }, [dispatch, task?.project, project]);
 

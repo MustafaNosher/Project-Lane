@@ -1,6 +1,7 @@
 import projectModel from "../models/project.js";
 import workspaceModel from "../models/workspace.js"
 import taskModel from "../models/task.js";
+import Comment from "../models/comment.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { validateRequestBody } from "../utils/validateRequest.js";
 
@@ -183,15 +184,19 @@ const deleteProject = async (req, res) => {
       return errorResponse(res, 403, "You are not a member of this project");
     }
 
-    // Remove tasks associated with the project
+    const tasks = await taskModel.find({ project: projectId });
+    const taskIds = tasks.map(task => task._id);
+
+    if (taskIds.length > 0) {
+        await Comment.deleteMany({ task: { $in: taskIds } });
+    }
+
     await taskModel.deleteMany({ project: projectId });
 
-    // Remove project from workspace
     await workspaceModel.findByIdAndUpdate(project.workspace, {
-      $pull: { projects: projectId },
+      $pull: { projects: projectId }, // removes the reference of project from the workspace project array and later we remove it
     });
 
-    // Delete the project
     await projectModel.findByIdAndDelete(projectId);
 
     return successResponse(res, 200, "Project deleted successfully");
@@ -245,7 +250,7 @@ const addProjectMember = async (req, res) => {
         }
 
         // Add member
-        project.members.push({ user: memberId, role: "member" });
+        project.members.push({ user: memberId, role: "contributor" });
         await project.save();
 
         const updatedProject = await projectModel.findById(projectId).populate("members.user", "name profilePicture");

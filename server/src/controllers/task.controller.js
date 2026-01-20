@@ -72,6 +72,19 @@ const getTaskById = async (req , res)=> {
         if(!task){
             return errorResponse(res , 404 , "Task not found");
         }
+
+        const project = await projectModel.findById(task.project);
+        if (!project) {
+            return errorResponse(res, 404, "Project not found");
+        }
+
+        const isMember = project.members.some(
+            (member) => (member.user?._id || member.user).toString() === req.user._id.toString()
+        );
+
+        if (!isMember) {
+            return errorResponse(res, 403, "You are not a member of this project");
+        }
         return successResponse(res , 200 , "Task fetched successfully" , task);
     }
     catch(error){
@@ -94,10 +107,10 @@ const updateTaskTitle = async (req , res)=> {
 
         const {title} = req.body;
 
-        if (typeof title !== "string" || title.length > 30) {
+        if (typeof title !== "string" || title.length > 50) {
             return errorResponse(
                 res,400,
-              "Title length must be upto 30 characters"
+              "Title length must be upto 50 characters"
             );
         }
 
@@ -498,23 +511,44 @@ const addComment = async(req,res)=>{
             return errorResponse(res , 404 , "Task not found");
         }
 
-        const project = await projectModel.findById(task.project);
+        const project = await projectModel.findById(task.project).populate("members.user", "name");
 
         if(!project){
             return errorResponse(res , 404 , "Project not found");
         }
 
         const isMember = project.members.some(
-            (member)=> member.user.toString() === req.user._id.toString()
+            (member)=> member.user._id.toString() === req.user._id.toString()
         );
         if(!isMember){
             return errorResponse(res , 403 , "You are not a member of this project");
         }   
 
+        // Parse mentions
+        const mentions = [];
+        const projectMembers = project.members.map(m => m.user);
+        
+        // Simple regex to find @Name
+        if (text.includes("@")) {
+            projectMembers.forEach(user => {
+                if (text.includes(`@${user.name}`)) {
+                     // Check if not self-mention
+                     if (user._id.toString() !== req.user._id.toString()) {
+                         mentions.push({
+                             user: user._id,
+                             offset: text.indexOf(`@${user.name}`), // approximate
+                             length: user.name.length + 1
+                         });
+                     }
+                }
+            });
+        }
+
         const addedComment = await commentModel.create({
             task: taskId,
             author: req.user._id,
-            text
+            text,
+            mentions
         });
 
         const updatedTask = await taskModel.findByIdAndUpdate(
@@ -526,6 +560,24 @@ const addComment = async(req,res)=>{
             path: "comments",
             populate: { path: "author", select: "name profilePicture" }
         });
+
+        const Notification = (await import("../models/notification.js")).default;
+        const { notifyUser } = await import("../libs/socket.js");
+
+        for (const mention of mentions) {
+            const notification = await Notification.create({
+                recipient: mention.user,
+                sender: req.user._id,
+                type: "mention",
+                referenceId: taskId,
+                message: `${req.user.name} mentioned you in a comment on task "${task.title}"`,
+            });
+            
+            const populatedNotification = await Notification.findById(notification._id)
+                .populate("sender", "name profilePicture");
+
+            notifyUser(mention.user.toString(), populatedNotification);
+        }
 
         notifyTaskUpdate(taskId, updatedTask);
         return successResponse(res , 200 , "Comment added successfully" , updatedTask);
@@ -545,11 +597,24 @@ const getCommentsofTask = async (req,res)=>{
 
         const task = await taskModel.findById(taskId);
 
-        if(!task){
+         if(!task){
             return errorResponse(res , 404 , "Task not found");
         }
 
-         const comments = await Comment.find({ task: taskId })
+        const project = await projectModel.findById(task.project);
+        if (!project) {
+            return errorResponse(res, 404, "Project not found");
+        }
+
+        const isMember = project.members.some(
+            (member) => (member.user?._id || member.user).toString() === req.user._id.toString()
+        );
+
+        if (!isMember) {
+            return errorResponse(res, 403, "You are not a member of this project");
+        }
+
+         const comments = await commentModel.find({ task: taskId })
          .populate("author", "name profilePicture")
          .sort({ createdAt: -1 });
 

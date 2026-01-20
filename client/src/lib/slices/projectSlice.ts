@@ -5,6 +5,7 @@ import axios from "axios";
 import apiClient from "../apiClient";
 import type { Project, CreateProjectData } from "@/types/projectTypes";
 import type { Workspace } from "@/types/workspaceTypes";
+import { logoutUser } from "./authSlice";
 
 interface ProjectState {
   projects: Project[];
@@ -173,8 +174,12 @@ export const deleteProjectThunk = createAsyncThunk(
     },
   },
   extraReducers: (builder) => {
-    // fetchProjectsByWorkspace
-    builder
+    builder.addCase(logoutUser.fulfilled, (state) => {
+      state.projects = [];
+      state.loading = false;
+      state.error = null;
+      state.lastFetchedWorkspaceId = null;
+    })
     .addCase(fetchProjectsByWorkspace.pending, (state) => {
       state.loading = true;
       state.error = null;
@@ -190,53 +195,42 @@ export const deleteProjectThunk = createAsyncThunk(
     .addCase(fetchProjectsByWorkspace.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
-    });
-    
-    // createProject
-    builder
-      .addCase(createProject.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(
-        createProject.fulfilled,
-        (state, action: PayloadAction<Project>) => {
-          state.loading = false;
-          state.projects.unshift(action.payload); // Add new project to the start
-        }
-      )
-      .addCase(createProject.rejected, (state, action) => {
+    })
+    .addCase(createProject.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    })
+    .addCase(
+      createProject.fulfilled,
+      (state, action: PayloadAction<Project>) => {
         state.loading = false;
-        state.error = action.payload as string;
-      });
-
-    // deleteProject
-    builder
-      .addCase(deleteProjectThunk.pending, (state) => {
-        state.loading = true;
+        state.projects.unshift(action.payload); // Add new project to the start
+      }
+    )
+    .addCase(createProject.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    })
+    .addCase(deleteProjectThunk.pending, (state) => {
+      state.loading = true;
+    })
+    .addCase(deleteProjectThunk.fulfilled, (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.projects = state.projects.filter(p => p._id !== action.payload);
+    })
+    .addCase(deleteProjectThunk.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
       })
-      .addCase(deleteProjectThunk.fulfilled, (state, action: PayloadAction<string>) => {
-        state.loading = false;
-        state.projects = state.projects.filter(p => p._id !== action.payload);
-      })
-      .addCase(deleteProjectThunk.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      });
-
-    // fetchProjectDetails
-    builder
-      .addCase(fetchProjectDetails.fulfilled, (state, action: PayloadAction<Project>) => {
-        const index = state.projects.findIndex(p => p._id === action.payload._id);
-        if (index !== -1) {
-          state.projects[index] = action.payload;
-        } else {
-          state.projects.unshift(action.payload);
-        }
-      });
-
-    // updateProject & addProjectMember (both return updated project)
-    builder.addMatcher(
+    .addCase(fetchProjectDetails.fulfilled, (state, action: PayloadAction<Project>) => {
+      const index = state.projects.findIndex(p => p._id === action.payload._id);
+      if (index !== -1) {
+        state.projects[index] = action.payload;
+      } else {
+        state.projects.unshift(action.payload);
+      }
+    })
+    .addMatcher(
       (action) => [updateProjectThunk.fulfilled.type, addProjectMemberThunk.fulfilled.type].includes(action.type),
       (state, action: PayloadAction<Project>) => {
         state.loading = false;
@@ -245,25 +239,20 @@ export const deleteProjectThunk = createAsyncThunk(
           state.projects[index] = action.payload;
         }
       }
-    );
-
-    builder.addMatcher(
+    )
+    .addMatcher(
       (action) => [updateProjectThunk.pending.type, addProjectMemberThunk.pending.type].includes(action.type), 
       (state) => {
         state.loading = true;
       }
-    );
-
-    builder.addMatcher(
+    )
+    .addMatcher(
       (action) => [updateProjectThunk.rejected.type, addProjectMemberThunk.rejected.type].includes(action.type),
       (state, action: PayloadAction<unknown>) => {
         state.loading = false;
         state.error = action.payload as string;
       }
     );
-
-
-
 
   },
 });

@@ -241,7 +241,13 @@ export function ProjectSettingsDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {currentWorkspace?.members
-                      ?.filter(wm => !project.members?.some(pm => (typeof pm.user === 'string' ? pm.user : pm.user?._id) === (typeof wm.user === 'string' ? wm.user : wm.user?._id)))
+                      ?.filter(wm => {
+                          const wmId = typeof wm.user === 'string' ? wm.user : wm.user?._id;
+                          return !project.members?.some(pm => {
+                              const pmId = typeof pm.user === 'string' ? pm.user : pm.user?._id;
+                              return String(pmId) === String(wmId);
+                          });
+                      })
                       .map((member) => (
                       <SelectItem 
                         key={(typeof member.user === 'string' ? member.user : member.user?._id) as string} 

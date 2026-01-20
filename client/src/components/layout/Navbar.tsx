@@ -15,6 +15,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, LogOut, Menu, X, Layout, CheckSquare, LayoutDashboard } from "lucide-react"; // Import Menu, X and icons
 import { cn } from "@/lib/utils"; // Import cn
+import NotificationBadge from "../notifications/NotificationBadge";
+import NotificationList from "../notifications/NotificationList";
 
 export function Navbar() {
   const dispatch = useAppDispatch();
@@ -55,6 +57,44 @@ export function Navbar() {
 
       {/* Right Side Actions */}
       <div className="flex items-center gap-4">
+        {/* Notification Bell */}
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-white hover:bg-white/10">
+                    <div className="relative">
+                        <User className="h-5 w-5 hidden" /> {/* Dummy to keep imports valid if needed, or better use Bell */}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-5 w-5"
+                        >
+                          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                        </svg>
+                        {/* Badge */}
+                         {/* We need to select unreadCount from store. I will add local selector here or pass props if easier, but local selector is fine */}
+                         <NotificationBadge />
+                    </div>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-80 bg-slate-900 border-white/10 text-slate-200" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal border-b border-white/10 pb-2 mb-2">
+                    <div className="flex items-center justify-between">
+                        <span className="font-semibold text-white">Notifications</span>
+                         {/* Mark all read button could go here */}
+                    </div>
+                </DropdownMenuLabel>
+                <NotificationList />
+            </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

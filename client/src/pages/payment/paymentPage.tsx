@@ -20,10 +20,9 @@ export default function PaymentPage() {
     try {
       setLoading(true);
       
-      // If user is already pro, open customer portal to manage subscription
       if (isPro) {
           const { data } = await apiClient.post(API_ROUTES.PAYMENT.CREATE_PORTAL_SESSION, {
-              returnUrl: window.location.origin + "/payment", // Return to payment page after managing
+              returnUrl: window.location.origin + "/payment", 
           });
           if (data.url) {
               window.location.href = data.url;
@@ -33,7 +32,6 @@ export default function PaymentPage() {
           return;
       }
 
-      // Otherwise, create checkout session for new subscription
       console.log("Initializing Stripe with key:", import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
       const stripe = await stripePromise;
 
@@ -61,7 +59,6 @@ export default function PaymentPage() {
 
     } catch (error) {
       console.error("Checkout Error:", error);
-      // Toast handled by interceptor
     } finally {
       setLoading(false);
     }

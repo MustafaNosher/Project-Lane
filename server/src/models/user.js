@@ -25,12 +25,14 @@ const userSchema = new mongoose.Schema({
     stripeSessionId: {
       type: String,
     },
+    stripeSubscriptionId: {
+      type: String,
+    },
     plan: {
       type: String,
       enum: ["free", "pro"],
       default: "free",
     },
-
     isPaid: {
       type: Boolean,
       default: false,

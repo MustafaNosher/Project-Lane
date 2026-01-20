@@ -19,6 +19,11 @@ export const initSocket = (server) => {
       console.log(`User ${socket.id} joined task room: task:${taskId}`);
     });
 
+    socket.on("join_user_room", (userId) => {
+        socket.join(`user:${userId}`);
+        console.log(`User ${socket.id} joined user room: user:${userId}`);
+    });
+
     socket.on("leave_task", (taskId) => {
       socket.leave(`task:${taskId}`);
       console.log(`User ${socket.id} left task room: task:${taskId}`);
@@ -44,4 +49,11 @@ export const notifyTaskUpdate = (taskId, data) => {
     io.to(`task:${taskId}`).emit("task_updated", data);
     console.log(`Notification sent to room: task:${taskId}`);
   }
+};
+
+export const notifyUser = (userId, data) => {
+    if (io) {
+        io.to(`user:${userId}`).emit("notification", data);
+        console.log(`Notification sent to user room: user:${userId}`);
+    }
 };

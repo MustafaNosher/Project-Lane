@@ -21,7 +21,6 @@ const getUserProfile = async (req, res)=>{
 } 
 
 const updateUserProfile = async (req, res) => {
-
   try {
 
     const errorMsg = validateRequestBody(req.body);
@@ -66,6 +65,11 @@ const updatePassword = async (req, res) => {
 
     const { oldPassword, newPassword } = req.body;
 
+     if (newPassword.length < 6) {
+      
+      return errorResponse(res, 400, "New password must be at least 6 characters long");
+    }
+
     const user = await User.findById(req.user._id).select("+password"); // Ensure password is selected
 
     if (!user) {
@@ -77,7 +81,6 @@ const updatePassword = async (req, res) => {
         
       return errorResponse(res, 400, "Invalid old password");
     }
-
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 

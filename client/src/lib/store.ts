@@ -7,6 +7,7 @@ import authReducer from './slices/authSlice';
 import workspaceReducer from './slices/workspaceSlice';
 import projectReducer from './slices/projectSlice';
 import taskReducer from './slices/taskSlice';
+import notificationReducer from './slices/notificationSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     workspace: workspaceReducer,
     projects: projectReducer,
     tasks: taskReducer,
+    notifications: notificationReducer,
   },
 });
 

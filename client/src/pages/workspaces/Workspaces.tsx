@@ -1,14 +1,22 @@
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { fetchWorkspaces } from "@/lib/slices/workspaceSlice";
 import { CreateWorkspaceDialog } from "@/components/workspaces/CreateWorkspaceDialog";
 import { WorkspaceCard } from "@/components/workspaces/WorkspaceCard";
 import { Loader2 } from "lucide-react";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+
+const ITEMS_PER_PAGE = 6;
 
 export default function Workspaces() {
   const dispatch = useAppDispatch();
   const { workspaces, isLoading, error, isFetched } = useAppSelector((state) => state.workspace);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const totalPages = Math.ceil(workspaces.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentWorkspaces = workspaces.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   
   useEffect(() => {
     if (!isFetched) {
@@ -32,11 +40,7 @@ export default function Workspaces() {
         <div className="flex justify-center items-center h-64">
              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
         </div>
-      ) : error ? (
-         <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
-            Error loading workspaces: {error}
-        </div>
-      ) : workspaces.length === 0 ? (
+      ): workspaces.length === 0 ? (
         <div className="text-center py-20 rounded-xl border border-dashed border-white/10 bg-white/5">
             <h3 className="text-lg font-medium text-white mb-2">No workspaces yet</h3>
             <p className="text-slate-400 mb-6 max-w-sm mx-auto">
@@ -44,11 +48,18 @@ export default function Workspaces() {
             </p>
         </div>
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workspaces.map((workspace) => (
+            {currentWorkspaces.map((workspace) => (
                 <WorkspaceCard key={workspace._id} workspace={workspace} />
             ))}
         </div>
+        <PaginationControls 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+        />
+        </>
       )}
     </div>
   );

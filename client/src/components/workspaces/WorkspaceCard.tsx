@@ -3,9 +3,8 @@ import { Calendar, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { truncate } from "@/utils/utilityFunctions";
 import { Button } from "@/components/ui/button";
-import { useAppDispatch } from "@/lib/store";
+import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { deleteWorkspace } from "@/lib/slices/workspaceSlice";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +23,9 @@ interface WorkspaceCardProps {
 
 export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
   const dispatch = useAppDispatch();
+ const { user: currentUser } = useAppSelector((state) => state.auth);
+ const isOwner = workspace.owner.toString() === currentUser?._id?.toString();
+
   const [open, setOpen] = useState(false);
 
   const formattedDate = new Date(workspace.createdAt).toLocaleDateString("en-US", {
@@ -35,7 +37,6 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
   const handleDelete = async () => {
         try {
             await dispatch(deleteWorkspace(workspace._id)).unwrap();
-            toast.success("Workspace deleted successfully");
             setOpen(false);
         } catch (error) {
             console.error("Failed to delete workspace:", error);
@@ -43,7 +44,7 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
   };
 
   return (
-    <div className="block group relative p-6 rounded-xl border border-white/10 bg-slate-900/40 backdrop-blur-sm hover:bg-slate-800/50 hover:border-indigo-500/30 transition-all duration-300">
+    <div className=" select-none block group relative p-6 rounded-xl border border-white/10 bg-slate-900/40 backdrop-blur-sm hover:bg-slate-800/50 hover:border-indigo-500/30 transition-all duration-300">
       <Link to={`/workspace/${workspace._id}`} className="absolute inset-0" />
       
       {/* Top Border Accent */}
@@ -72,6 +73,7 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
             <div className="pointer-events-auto">
                <Dialog open={open} onOpenChange={setOpen}>
                   <DialogTrigger asChild>
+                    {isOwner && (
                     <Button
                         type="button"
                         variant="destructive"
@@ -84,6 +86,7 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
                     >
                         Delete
                     </Button>
+                    )}
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px] bg-slate-900 border-white/10 text-white" onClick={(e) => e.stopPropagation()}>
                     <DialogHeader>

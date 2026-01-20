@@ -7,7 +7,10 @@ import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { AddMemberDialog } from "@/components/workspaces/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, Layout, Search, Filter } from "lucide-react";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Input } from "@/components/ui/input";
+
+const ITEMS_PER_PAGE = 6;
 
 export default function WorkspaceDetails() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -21,6 +24,7 @@ export default function WorkspaceDetails() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const isOwner = currentUser?._id === currentWorkspace?.owner;
 
@@ -38,6 +42,14 @@ export default function WorkspaceDetails() {
       statusFilter === "All" || project.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentProjects = filteredProjects.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   if (workspaceLoading && !currentWorkspace) {
     return (
@@ -137,11 +149,19 @@ export default function WorkspaceDetails() {
 
       {/* Projects Grid */}
       {filteredProjects.length > 0 ? (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
+          {currentProjects.map((project) => (
             <ProjectCard key={project._id} project={project} />
           ))}
         </div>
+        
+        <PaginationControls 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+        </>
       ) : (
         <div className="text-center py-20 bg-slate-900/20 rounded-xl border border-dashed border-white/10">
           <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4">

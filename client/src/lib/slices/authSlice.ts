@@ -24,7 +24,6 @@ export const loginUser = createAsyncThunk<
     const response = await apiClient.post(API_ROUTES.AUTH.LOGIN, credentials);
     const data = response.data;
     
-    // Axios throws on non-2xx, so we can assume success here if we reach this line
     localStorage.setItem("token", data.data.token);
     return data;
   } catch (error: any) {
@@ -155,9 +154,13 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    tokenRefreshed: (state, action: PayloadAction<string>) => {
+      state.token = action.payload;
+      state.isAuthenticated = true;
+      localStorage.setItem("token", action.payload);
+    },
   },
   extraReducers: (builder) => {
-    // Login
     builder.addCase(loginUser.pending, (state) => {
       state.isLoading = true;
       state.error = null;
@@ -175,7 +178,6 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
     });
 
-    // Register
     builder.addCase(registerUser.pending, (state) => {
       state.isLoading = true;
       state.error = null;
@@ -189,20 +191,18 @@ const authSlice = createSlice({
       state.error = action.payload as string;
     });
 
-    // Logout
     builder.addCase(logoutUser.fulfilled, (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
     });
     
-    // Fetch Current User
     builder.addCase(fetchCurrentUser.pending, (state) => {
         state.isLoading = true;
     });
     builder.addCase(fetchCurrentUser.fulfilled, (state, action: PayloadAction<User>) => {
         state.isLoading = false;
-            state.error = null;
+        state.error = null;
         state.isAuthenticated = true;
         state.user = action.payload;
     });
@@ -214,13 +214,12 @@ const authSlice = createSlice({
         localStorage.removeItem("token");
     });
 
-    // Fetch All Users
     builder.addCase(fetchAllUsers.pending, (state) => {
         state.isLoading = true;
     });
     builder.addCase(fetchAllUsers.fulfilled, (state, action: PayloadAction<User[]>) => {
         state.isLoading = false;
-            state.error = null;
+        state.error = null;
         state.allUsers = action.payload;
     });
     builder.addCase(fetchAllUsers.rejected, (state, action) => {
@@ -228,13 +227,12 @@ const authSlice = createSlice({
         state.error = action.payload as string;
     });
 
-    // Fetch Dashboard Stats
     builder.addCase(fetchDashboardStats.pending, (state) => {
         state.isLoading = true;
     });
     builder.addCase(fetchDashboardStats.fulfilled, (state, action) => {
         state.isLoading = false;
-            state.error = null;
+        state.error = null;
         state.dashboardStats = action.payload;
     });
     builder.addCase(fetchDashboardStats.rejected, (state, action) => {
@@ -242,13 +240,12 @@ const authSlice = createSlice({
         state.error = action.payload as string;
     });
 
-    // Update Profile
     builder.addCase(updateProfile.pending, (state) => {
         state.isLoading = true;
     });
     builder.addCase(updateProfile.fulfilled, (state, action: PayloadAction<User>) => {
         state.isLoading = false;
-            state.error = null;
+        state.error = null;
         state.user = action.payload;
     });
     builder.addCase(updateProfile.rejected, (state, action) => {
@@ -256,7 +253,6 @@ const authSlice = createSlice({
         state.error = action.payload as string;
     });
 
-    // Update Password
     builder.addCase(updatePassword.pending, (state) => {
         state.isLoading = true;
     });
@@ -271,5 +267,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, tokenRefreshed } = authSlice.actions;
 export default authSlice.reducer;

@@ -4,7 +4,6 @@ import { parseFormData } from "../middleware/multer-middleware.js";
 
 import { 
     createTask, 
-    getTaskById,
     updateTaskTitle,
     updateTaskDescription,
     updateTaskStatus,
@@ -14,7 +13,8 @@ import {
     updateSubTask,
     addComment,
     getMyTasks,
-    uploadAttachment
+    uploadAttachment,
+    getTaskById
 } from "../controllers/task.controller.js";
 import { upload } from "../libs/multer.js";
 

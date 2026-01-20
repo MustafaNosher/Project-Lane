@@ -3,6 +3,7 @@ import axios from "axios";
 import { API_ROUTES } from "@/config/routes";
 import apiClient from "../apiClient";
 import type { Workspace, WorkspaceState, CreateWorkspacePayload } from "@/types/workspaceTypes";
+import { logoutUser } from "./authSlice";
 
 const initialState: WorkspaceState = {
     workspaces: [],
@@ -90,16 +91,16 @@ export const fetchWorkspaceById = createAsyncThunk<
 });
 
 export const deleteWorkspace = createAsyncThunk<
-    Workspace,
+    string,
     string,
     { rejectValue: string }
 >("workspace/delete", async (workspaceId, { rejectWithValue }) => {
     try {
         const token = localStorage.getItem("token");
-        const response = await apiClient.delete(API_ROUTES.WORKSPACE.DELETE(workspaceId), {
+        await apiClient.delete(API_ROUTES.WORKSPACE.DELETE(workspaceId), {
             headers: { Authorization: `Bearer ${token}` }
         });
-        return response.data.data;
+        return workspaceId;
     } catch (error: any) {
         if (axios.isAxiosError(error) && error.response) {
             return rejectWithValue(error.response.data.message || "Failed to delete workspace");
@@ -192,7 +193,7 @@ const workspaceSlice = createSlice({
         builder.addCase(deleteWorkspace.fulfilled, (state, action) => {
             state.isLoading = false;
             state.error = null;
-            state.workspaces = state.workspaces.filter(w => w._id !== action.payload._id);
+            state.workspaces = state.workspaces.filter(w => w._id !== action.payload);
             state.currentWorkspace = null;
         });
         builder.addCase(deleteWorkspace.rejected, (state, action) => {
@@ -200,9 +201,16 @@ const workspaceSlice = createSlice({
             state.error = action.payload as string;
         });
 
-        // Listen for project slice thunk to sync workspace data
         builder.addCase("projects/fetchByWorkspace/fulfilled", (state, action: any) => {
             state.currentWorkspace = action.payload.workspace;
+        });
+        
+        builder.addCase(logoutUser.fulfilled, (state) => {
+            state.workspaces = [];
+            state.currentWorkspace = null;
+            state.isLoading = false;
+            state.error = null;
+            state.isFetched = false;
         });
     }
 });

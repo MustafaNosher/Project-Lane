@@ -19,7 +19,7 @@ export interface Project {
   startDate?: string;
   dueDate?: string;
   progress: number;
-  tasks: ProjectTask[]; // Only populated with partial data usually, or IDs
+  tasks: ProjectTask[]; 
   members: ProjectMember[];
   tags: string[];
   createdBy: string; // User ID
@@ -33,6 +33,6 @@ export interface CreateProjectData {
   status?: string;
   startDate?: string;
   dueDate?: string;
-  members?: string[]; // Array of User IDs to add
-  tags?: string; // Comma separated string for input
+  members?: string[]; 
+  tags?: string; 
 }
