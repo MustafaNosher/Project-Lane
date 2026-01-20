@@ -6,6 +6,7 @@ import projectRoutes from "./project.js";
 import taskRoutes from "./task.js"
 import paymentRoutes from "./payment.js"
 import notificationRoutes from "./notification.js";
+import { handleStripeWebhook } from "../controllers/payment.controller.js";
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use("/project", projectRoutes);
 router.use("/task", taskRoutes);
 router.use("/payment", paymentRoutes);
 router.use("/notification", notificationRoutes);
+router.post("/webhook", handleStripeWebhook);
 
 export default router;

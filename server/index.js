@@ -27,7 +27,7 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json({
   verify: (req, res, buf) => {
-    if (req.originalUrl.startsWith("/api/payment/webhook")) {
+    if (req.originalUrl.includes("webhook")) {
       req.rawBody = buf.toString();
     }
   },

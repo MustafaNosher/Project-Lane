@@ -28,6 +28,8 @@ router.get(
   getCheckoutSessionDetails
 );
 
-router.post("/webhook", handleStripeWebhook);
+router.post("/webhook",
+   express.raw({ type: "application/json" }),
+   handleStripeWebhook);
 
 export default router;
