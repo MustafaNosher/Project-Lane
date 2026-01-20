@@ -4,7 +4,7 @@ import { API_BASE_URL } from "@/config/routes";
 const SOCKET_URL = API_BASE_URL.replace("/api", "");
 
 export const socket = io(SOCKET_URL, {
-  autoConnect: false, // Don't connect until needed
+  autoConnect: false, 
 });
 
 export const joinTaskRoom = (taskId: string) => {

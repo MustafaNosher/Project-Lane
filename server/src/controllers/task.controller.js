@@ -523,20 +523,17 @@ const addComment = async(req,res)=>{
         if(!isMember){
             return errorResponse(res , 403 , "You are not a member of this project");
         }   
-
-        // Parse mentions
+        
         const mentions = [];
         const projectMembers = project.members.map(m => m.user);
-        
-        // Simple regex to find @Name
+
         if (text.includes("@")) {
             projectMembers.forEach(user => {
                 if (text.includes(`@${user.name}`)) {
-                     // Check if not self-mention
                      if (user._id.toString() !== req.user._id.toString()) {
                          mentions.push({
                              user: user._id,
-                             offset: text.indexOf(`@${user.name}`), // approximate
+                             offset: text.indexOf(`@${user.name}`),
                              length: user.name.length + 1
                          });
                      }

@@ -66,7 +66,6 @@ export function CreateProjectDialog({ isOpen, onClose, workspace }: CreateProjec
             members: formData.members.map(userId => ({ user: userId, role: "contributor" }))
         };
 
-        // Remove empty strings for dates to avoid Mongoose validation errors
         if (!projectData.startDate) delete projectData.startDate;
         if (!projectData.dueDate) delete projectData.dueDate;
 
@@ -75,7 +74,7 @@ export function CreateProjectDialog({ isOpen, onClose, workspace }: CreateProjec
             projectData
         })).unwrap();
         onClose();
-        // Reset form
+        
         setFormData({
             title: "",
             description: "",

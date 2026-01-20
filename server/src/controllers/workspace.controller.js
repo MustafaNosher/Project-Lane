@@ -97,7 +97,6 @@ const getWorkspaceProjects = async (req, res) => {
       .populate("members.user", "name profilePicture")
       .sort({ createdAt: -1 });
 
-    // Self-healing: Ensure workspace.projects only contains existing project IDs
     const projectIds = projects.map(p => p._id.toString());
     const needsCleanup = workspace.projects.some(id => !projectIds.includes(id.toString()));
     
@@ -124,18 +123,14 @@ const addWorkspaceMember = async (req, res) => {
       return errorResponse(res, 404, "Workspace not found");
     }
 
-    // Check if the current user is the owner
     if (workspace.owner.toString() !== req.user._id.toString()) {
       return errorResponse(res, 403, "Only the workspace owner can add members");
     }
 
-    // Check if the user to be added exists
     const userToAdd = await User.findById(userId);
     if (!userToAdd) {
       return errorResponse(res, 404, "User not found");
     }
-
-    // Check if the user is already a member
     const isAlreadyMember = workspace.members.some(
       (member) => member.user.toString() === userId.toString()
     );
@@ -143,8 +138,6 @@ const addWorkspaceMember = async (req, res) => {
     if (isAlreadyMember) {
       return errorResponse(res, 400, "User is already a member of this workspace");
     }
-
-    // Add the new member
     workspace.members.push({
       user: userId,
       role: role || "member",
@@ -176,35 +169,26 @@ const deleteWorkspace = async (req, res) => {
     if (workspace.owner.toString() !== req.user._id.toString()) {
       return errorResponse(res, 403, "Only the workspace owner can delete the workspace");
     }
-    // Find all projects associated with this workspace
     const projects = await Project.find({ workspace: workspaceId });
     const projectIds = projects.map(project => project._id);
 
     console.log(`Found ${projectIds.length} projects to delete for workspace ${workspaceId}`);
 
     if (projectIds.length > 0) {
-      // Find all tasks associated with these projects
       const tasks = await Task.find({ project: { $in: projectIds } });
       const taskIds = tasks.map(task => task._id);
 
       console.log(`Found ${taskIds.length} tasks to delete`);
 
       if (taskIds.length > 0) {
-        // Delete all comments associated with these tasks
         const deleteCommentsResult = await Comment.deleteMany({ task: { $in: taskIds } });
         console.log(`Deleted ${deleteCommentsResult.deletedCount} comments`);
       }
-
-      // Delete all tasks
       const deleteTasksResult = await Task.deleteMany({ project: { $in: projectIds } });
       console.log(`Deleted ${deleteTasksResult.deletedCount} tasks`);
     }
-
-    // Delete all projects
     const deleteProjectsResult = await Project.deleteMany({ workspace: workspaceId });
     console.log(`Deleted ${deleteProjectsResult.deletedCount} projects`);
-
-    // Delete the workspace itself
     await Workspace.findByIdAndDelete(workspaceId);
 
     return successResponse(res, 200, "Workspace and all associated projects and tasks deleted successfully");

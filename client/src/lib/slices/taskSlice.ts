@@ -25,10 +25,8 @@ export const fetchProjectTasks = createAsyncThunk(
   "tasks/fetchByProject",
   async (projectId: string, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.get(
-        `${API_BASE_URL}/project/tasks/${projectId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE_URL}/project/tasks/${projectId}`
       );
       return response.data.data;
     } catch (error: any) {
@@ -42,10 +40,8 @@ export const fetchTaskByIdThunk = createAsyncThunk(
   "tasks/fetchById",
   async (taskId: string, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.get(
-        `${API_BASE_URL}/task/${taskId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE_URL}/task/${taskId}`
       );
       return response.data.data;
     } catch (error: any) {
@@ -67,11 +63,9 @@ export const createTask = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.post(
         `${API_BASE_URL}/task/create/${projectId}`,
-        taskData,
-        { headers: { Authorization: `Bearer ${token}` } }
+        taskData
       );
       return response.data.data;
     } catch (error: any) {
@@ -93,11 +87,9 @@ export const updateTaskStatusThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { status }
       );
       return response.data.data;
     } catch (error: any) {
@@ -119,11 +111,9 @@ export const updateTaskTitleThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/title`,
-        { title },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { title }
       );
       return response.data.data;
     } catch (error: any) {
@@ -145,11 +135,9 @@ export const updateTaskDescriptionThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/description`,
-        { description },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { description }
       );
       return response.data.data;
     } catch (error: any) {
@@ -171,11 +159,9 @@ export const updateTaskPriorityThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/priority`,
-        { priority },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { priority }
       );
       return response.data.data;
     } catch (error: any) {
@@ -197,11 +183,9 @@ export const addSubTaskThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.post(
         `${API_BASE_URL}/task/${taskId}/subtasks`,
-        { title },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { title }
       );
       return response.data.data;
     } catch (error: any) {
@@ -223,11 +207,9 @@ export const updateSubTaskThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/subtasks/${subtaskId}`,
-        { completed },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { completed }
       );
       return response.data.data;
     } catch (error: any) {
@@ -249,11 +231,9 @@ export const updateTaskAssigneesThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.patch(
         `${API_BASE_URL}/task/${taskId}/assignees`,
-        { assignees },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { assignees }
       );
       return response.data.data;
     } catch (error: any) {
@@ -275,11 +255,9 @@ export const addCommentThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.post(
         `${API_BASE_URL}/task/${taskId}/comments`,
-        { text },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { text }
       );
       return response.data.data;
     } catch (error: any) {
@@ -302,7 +280,6 @@ export const uploadAttachmentThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("attachment", file);
 
@@ -311,7 +288,6 @@ export const uploadAttachmentThunk = createAsyncThunk(
         formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
         }
@@ -333,10 +309,8 @@ export const fetchMyTasksThunk = createAsyncThunk(
   "tasks/fetchMyTasks",
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.get(
-        `${API_BASE_URL}/task/my-tasks`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE_URL}/task/my-tasks`
       );
       return response.data.data;
     } catch (error: any) {
@@ -367,7 +341,6 @@ const taskSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Clear state on logout
     builder.addCase(logoutUser.fulfilled, (state) => {
       state.tasks = [];
       state.loading = false;

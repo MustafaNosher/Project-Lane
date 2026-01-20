@@ -21,7 +21,7 @@ const projectSchema = new mongoose.Schema(
     startDate: { type: Date },
     dueDate: { type: Date },
     progress: { type: Number, min: 0, max: 100, default: 0 },
-    tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }], // A project has multiple tasks in it
+    tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }], // A project can have multiple tasks in it
     members: [
       {
         user: {

@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/lib/store";
+import { useAppDispatch, useAppSelector, type RootState } from "@/lib/store";
 import { fetchDashboardStats } from "@/lib/slices/authSlice";
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
-  const { user, dashboardStats, isLoading } = useAppSelector((state) => state.auth);
+  const { user, dashboardStats, isLoading } = useAppSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     dispatch(fetchDashboardStats());

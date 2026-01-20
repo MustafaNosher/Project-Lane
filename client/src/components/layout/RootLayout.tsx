@@ -2,16 +2,16 @@ import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
-import { useAppDispatch, useAppSelector } from "@/lib/store";
+import { useAppDispatch, useAppSelector, type RootState } from "@/lib/store";
 import { fetchCurrentUser } from "@/lib/slices/authSlice";
 import { socket } from "@/lib/socket";
-import { addNotification } from "@/lib/slices/notificationSlice"; // Updated import path to match file location
+import { addNotification } from "@/lib/slices/notificationSlice";
 import { toast } from "sonner";
 
 
 export default function RootLayout() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     if (isAuthenticated && !user) {
@@ -41,7 +41,6 @@ export default function RootLayout() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30 dark font-sans">
-         {/* Background Gradients & Effects (consistent with Auth) */}
          <div className="fixed inset-0 z-0 pointer-events-none">
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[120px]" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px]" />

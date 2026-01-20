@@ -16,10 +16,7 @@ export const fetchNotifications = createAsyncThunk(
     "notifications/fetchAll",
     async (_, { rejectWithValue }) => {
         try {
-            const token = localStorage.getItem("token");
-            const response = await apiClient.get(`${API_BASE_URL}/notification`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiClient.get(`${API_BASE_URL}/notification`);
             return response.data.data;
         } catch (error: any) {
             if (axios.isAxiosError(error) && error.response) {
@@ -34,11 +31,9 @@ export const markNotificationRead = createAsyncThunk(
     "notifications/markRead",
     async (notificationId: string, { rejectWithValue }) => {
         try {
-            const token = localStorage.getItem("token");
             const response = await apiClient.patch(
                 `${API_BASE_URL}/notification/${notificationId}/read`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
+                {}
             );
             return { notificationId, data: response.data.data };
         } catch (error: any) {

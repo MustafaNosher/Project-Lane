@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
         required:true,
         select:false
     },
-    profilePicture: { type: String }, //kept optional as of now
+    profilePicture: { type: String }, //kept optional
 
     stripeCustomerId: {
       type: String,

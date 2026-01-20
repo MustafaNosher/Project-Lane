@@ -1,7 +1,7 @@
 
 import type { ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAppSelector } from "./lib/store";
+import { useAppSelector, type RootState } from "./lib/store";
 import AuthPage from "./pages/auth/Auth.tsx";
 import { ROUTES } from "./config/routes";
 import RootLayout from "./components/layout/RootLayout";
@@ -19,7 +19,7 @@ import { Toaster } from "sonner";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated } = useAppSelector((state: RootState) => state.auth);
   
   if (!isAuthenticated) {
      return <Navigate to={ROUTES.AUTH.SIGN_IN} replace />;
@@ -27,8 +27,6 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   return children;
 }
-
-// ... imports
 
 function App() {
   return (
@@ -42,10 +40,8 @@ function App() {
         <Route path={ROUTES.AUTH.SIGN_IN} element={<AuthPage />} />
         <Route path={ROUTES.AUTH.SIGN_UP} element={<AuthPage />} />
         
-        {/* Default redirect */}
         <Route path="/" element={<Navigate to={ROUTES.AUTH.SIGN_IN} replace />} />
 
-        {/* Protected Routes */}
         <Route
           element={
             <ProtectedRoute>
@@ -64,8 +60,7 @@ function App() {
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/cancel" element={<PaymentCancel />} />
         </Route>
-        
-        {/* Catch all */}
+
          <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

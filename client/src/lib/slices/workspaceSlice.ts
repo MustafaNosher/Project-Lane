@@ -19,10 +19,7 @@ export const fetchWorkspaces = createAsyncThunk<
     { rejectValue: string }
 >("workspace/fetchAll", async (_, { rejectWithValue }) => {
     try {
-        const token = localStorage.getItem("token");
-        const response = await apiClient.get(API_ROUTES.WORKSPACE.GET_ALL, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await apiClient.get(API_ROUTES.WORKSPACE.GET_ALL);
         return response.data.data;
     } catch (error: any) {
          if (axios.isAxiosError(error) && error.response) {
@@ -38,10 +35,7 @@ export const createWorkspace = createAsyncThunk<
     { rejectValue: string }
 >("workspace/create", async (payload, { rejectWithValue }) => {
     try {
-        const token = localStorage.getItem("token");
-        const response = await apiClient.post(API_ROUTES.WORKSPACE.CREATE, payload, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await apiClient.post(API_ROUTES.WORKSPACE.CREATE, payload);
         return response.data.data;
     } catch (error: any) {
         if (axios.isAxiosError(error) && error.response) {
@@ -58,10 +52,7 @@ export const addWorkspaceMember = createAsyncThunk<
     { rejectValue: string }
 >("workspace/addMember", async ({ workspaceId, userId, role }, { rejectWithValue }) => {
     try {
-        const token = localStorage.getItem("token");
-        const response = await apiClient.post(API_ROUTES.WORKSPACE.ADD_MEMBER(workspaceId), { userId, role }, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await apiClient.post(API_ROUTES.WORKSPACE.ADD_MEMBER(workspaceId), { userId, role });
         return response.data.data;
     } catch (error: any) {
         if (axios.isAxiosError(error) && error.response) {
@@ -77,10 +68,7 @@ export const fetchWorkspaceById = createAsyncThunk<
     { rejectValue: string }
 >("workspace/fetchById", async (workspaceId, { rejectWithValue }) => {
     try {
-        const token = localStorage.getItem("token");
-        const response = await apiClient.get(`${API_ROUTES.WORKSPACE.base}/${workspaceId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await apiClient.get(`${API_ROUTES.WORKSPACE.base}/${workspaceId}`);
         return response.data.data;
     } catch (error: any) {
         if (axios.isAxiosError(error) && error.response) {
@@ -96,10 +84,7 @@ export const deleteWorkspace = createAsyncThunk<
     { rejectValue: string }
 >("workspace/delete", async (workspaceId, { rejectWithValue }) => {
     try {
-        const token = localStorage.getItem("token");
-        await apiClient.delete(API_ROUTES.WORKSPACE.DELETE(workspaceId), {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.delete(API_ROUTES.WORKSPACE.DELETE(workspaceId));
         return workspaceId;
     } catch (error: any) {
         if (axios.isAxiosError(error) && error.response) {
@@ -159,7 +144,6 @@ const workspaceSlice = createSlice({
             state.isLoading = false;
             state.error = null;
             state.currentWorkspace = action.payload;
-            // Also update the workspace in the list if it exists
             const index = state.workspaces.findIndex(w => w._id === action.payload._id);
             if (index !== -1) {
                 state.workspaces[index] = action.payload;

@@ -62,12 +62,9 @@ export const setupAxios = (store: any) => {
             processQueue(err, null);
             isRefreshing = false;
             store.dispatch(logoutUser());
-            // Optionally redirect to login or show session expired toast
             return Promise.reject(err);
         }
       }
-
-      // Default error handling (toast)
       let message = "An unexpected error occurred.";
       if (axios.isAxiosError(error)) {
           if (error.response && error.response.data && error.response.data.message) {

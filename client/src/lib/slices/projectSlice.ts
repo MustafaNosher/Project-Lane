@@ -26,12 +26,9 @@ export const fetchProjectsByWorkspace = createAsyncThunk(
   "projects/fetchByWorkspace",
   async (workspaceId: string, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.get(
-        `${API_BASE_URL}/workspace/${workspaceId}/projects`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE_URL}/workspace/${workspaceId}/projects`
       );
-      // The endpoint returns { projects: [...], workspace: {...} }
       return response.data.data; 
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response) {
@@ -52,11 +49,9 @@ export const createProject = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.post(
         `${API_BASE_URL}/project/create/${workspaceId}`,
-        projectData,
-        { headers: { Authorization: `Bearer ${token}` } }
+        projectData
       );
       return response.data.data;
     } catch (error: any) {
@@ -75,10 +70,8 @@ export const fetchProjectDetails = createAsyncThunk(
   "projects/fetchDetails",
   async (projectId: string, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.get(
-        `${API_BASE_URL}/project/details/${projectId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE_URL}/project/details/${projectId}`
       );
       return response.data.data;
     } catch (error: any) {
@@ -100,11 +93,9 @@ export const updateProjectThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.patch(
         `${API_BASE_URL}/project/${projectId}`,
-        projectData,
-        { headers: { Authorization: `Bearer ${token}` } }
+        projectData
       );
       return response.data.data;
     } catch (error: any) {
@@ -126,11 +117,9 @@ export const addProjectMemberThunk = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.patch(
         `${API_BASE_URL}/project/${projectId}/members`,
-        { memberId },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { memberId }
       );
       return response.data.data;
     } catch (error: any) {
@@ -149,7 +138,7 @@ export const deleteProjectThunk = createAsyncThunk(
   async (projectId: string, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await apiClient.delete(
+      await apiClient.delete(
         `${API_BASE_URL}/project/${projectId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );

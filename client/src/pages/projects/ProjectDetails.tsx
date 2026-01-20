@@ -64,17 +64,14 @@ export default function ProjectDetails() {
 
     const draggedTask = tasks.find(t => t._id === taskId);
     if (!draggedTask) return;
-
-    // Determine the target status
-    let targetStatus = overId;
     
-    // If dropped over another task, get its status
+    let targetStatus = overId;
+
     const overTask = tasks.find(t => t._id === overId);
     if (overTask) {
       targetStatus = overTask.status;
     }
-
-    // Only update if the status actually changed
+    
     const isValidStatus = STATUS_COLUMNS.some(col => col.id === targetStatus);
     if (draggedTask.status !== targetStatus && isValidStatus) {
       dispatch(updateTaskStatusThunk({ taskId, status: targetStatus }));

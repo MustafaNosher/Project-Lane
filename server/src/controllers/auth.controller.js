@@ -29,7 +29,6 @@ const setTokenCookie = (res, token) => {
 };
 
 const registerUser = async (req, res) => {
-  // Validate request body
   const errorMsg = validateRequestBody(req.body, ["email", "name", "password", "confirmPassword"]);
   if (errorMsg) return errorResponse(res, 400, errorMsg);
 
@@ -41,11 +40,10 @@ const registerUser = async (req, res) => {
       return errorResponse(res, 400, "Invalid email address");
     }
 
-    // Password length validation
     if (password.length < 6) {
       return errorResponse(res, 400, "Password must be at least 6 characters long");
     }
-    
+
     if (password !== confirmPassword) {
       return errorResponse(res, 400, "Passwords do not match");
     }
@@ -93,7 +91,6 @@ const registerUser = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
-  // Validate request body
   const errorMsg = validateRequestBody(req.body, ["email", "password"]);
   if (errorMsg) return errorResponse(res, 400, errorMsg);
 
@@ -159,7 +156,7 @@ const refreshToken = async (req, res) => {
 
         const { accessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
         
-        setTokenCookie(res, newRefreshToken); // Rotate refresh token
+        setTokenCookie(res, newRefreshToken); 
 
         return successResponse(res, 200, "Token refreshed", { token: accessToken });
 

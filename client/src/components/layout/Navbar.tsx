@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "@/lib/store";
+import { useAppDispatch, useAppSelector, type RootState } from "@/lib/store";
 import { logoutUser } from "@/lib/slices/authSlice";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,7 @@ import NotificationList from "../notifications/NotificationList";
 
 export function Navbar() {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -37,7 +37,6 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
       <div className="flex items-center gap-4">
-        {/* Mobile Menu Trigger */}
         <Button
           variant="ghost"
           size="icon"
@@ -46,8 +45,7 @@ export function Navbar() {
         >
           {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </Button>
-
-        {/* Logo */}
+        
         <Link to="/dashboard" className="flex items-center gap-2">
           <div className="text-2xl font-extrabold tracking-tight bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-sm">
             ProjectLane
@@ -55,14 +53,12 @@ export function Navbar() {
         </Link>
       </div>
 
-      {/* Right Side Actions */}
       <div className="flex items-center gap-4">
-        {/* Notification Bell */}
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-white hover:bg-white/10">
                     <div className="relative">
-                        <User className="h-5 w-5 hidden" /> {/* Dummy to keep imports valid if needed, or better use Bell */}
+                        <User className="h-5 w-5 hidden" /> 
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="24"
@@ -78,8 +74,6 @@ export function Navbar() {
                           <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                         </svg>
-                        {/* Badge */}
-                         {/* We need to select unreadCount from store. I will add local selector here or pass props if easier, but local selector is fine */}
                          <NotificationBadge />
                     </div>
                 </Button>
@@ -88,14 +82,11 @@ export function Navbar() {
                 <DropdownMenuLabel className="font-normal border-b border-white/10 pb-2 mb-2">
                     <div className="flex items-center justify-between">
                         <span className="font-semibold text-white">Notifications</span>
-                         {/* Mark all read button could go here */}
                     </div>
                 </DropdownMenuLabel>
                 <NotificationList />
             </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-white/10 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950">
@@ -132,8 +123,7 @@ export function Navbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      {/* Mobile Menu Overlay */}
+      
       {isMobileMenuOpen && (
         <div className="absolute top-[73px] left-0 right-0 bottom-0 h-[calc(100vh-73px)] bg-slate-950/95 backdrop-blur-md z-40 p-4 border-t border-white/10 md:hidden flex flex-col animate-in slide-in-from-top-4 duration-200">
            <nav className="space-y-1">

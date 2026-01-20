@@ -216,8 +216,6 @@ const addProjectMember = async (req, res) => {
         if (!project) {
             return errorResponse(res, 404, "Project not found");
         }
-
-        // Check verification
         const isRequesterMember = project.members.some(
             (member) => (member.user?._id || member.user).toString() === req.user._id.toString()
         );
@@ -226,7 +224,6 @@ const addProjectMember = async (req, res) => {
             return errorResponse(res, 403, "You are not a member of this project");
         }
 
-        // Check if user is already a member
         const isAlreadyMember = project.members.some(
             (member) => (member.user?._id || member.user).toString() === memberId
         );
@@ -234,8 +231,6 @@ const addProjectMember = async (req, res) => {
         if (isAlreadyMember) {
             return errorResponse(res, 400, "User is already a member of this project");
         }
-
-        // Verify user belongs to the workspace
         const workspace = await workspaceModel.findById(project.workspace);
         if (!workspace) {
              return errorResponse(res, 404, "Workspace not found");
@@ -248,8 +243,6 @@ const addProjectMember = async (req, res) => {
         if (!isWorkspaceMember) {
             return errorResponse(res, 400, "User must be a member of the workspace to be added to the project");
         }
-
-        // Add member
         project.members.push({ user: memberId, role: "contributor" });
         await project.save();
 

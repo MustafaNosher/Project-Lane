@@ -13,7 +13,6 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const { user } = useAppSelector((state) => state.auth);
   
-  // Assuming user object has plan = 'pro' or isPaid = true
   const isPro = user?.isPaid || user?.plan === "pro"; 
 
   const handleCheckout = async () => {

@@ -31,7 +31,7 @@ export function AddMemberDialog({ workspace }: AddMemberDialogProps) {
     const filteredUsers = allUsers?.filter((user: User) => 
         (user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
          user.email.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        user._id !== workspace.owner // Don't show owner as someone to add
+        user._id !== workspace.owner
     );
 
     const isMember = (userId: string) => {

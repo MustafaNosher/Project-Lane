@@ -43,7 +43,6 @@ const updateUserProfile = async (req, res) => {
     }
 
     if (name) user.name = name;
-    // Save profile picture if provided (base64 string)
     if (profilePicture) user.profilePicture = profilePicture;
 
     await user.save();
@@ -66,7 +65,7 @@ const updatePassword = async (req, res) => {
     const { oldPassword, newPassword } = req.body;
 
      if (newPassword.length < 6) {
-      
+
       return errorResponse(res, 400, "New password must be at least 6 characters long");
     }
 
