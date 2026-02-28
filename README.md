@@ -21,7 +21,6 @@ Project-Lane provides a clear, lane-based interface for managing complex softwar
 
 * **Dynamic Lane Management**: Create and customize lanes based on project phases.
 * **Real-time Synchronization**: Changes reflect instantly across all connected clients.
-* **GitHub Integration**: Link issues and pull requests directly to project cards.
 * **Performance Analytics**: Track team velocity and lane bottlenecks.
 
 ## Getting Started
